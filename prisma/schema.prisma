@@ -1,5 +1,12 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -19,6 +26,8 @@ model User {
   apiTokens      ApiToken[]
   apiAccesses    UserApiAccess[]
   usageLogs      ApiUsageLog[]
+
+  // @@index([status]) // TODO: Add index for status
 }
 
 enum Status {
@@ -28,29 +37,33 @@ enum Status {
 
 model Api {
   id                  BigInt          @id @default(autoincrement())
-  api_name            String
+  api_name            String          @unique
   slug                String          @unique
-  default_daily_limit Int
+  default_daily_limit Int             @default(100)
   basic_parameters    Json
-  advanced_parameters Json
+  advanced_parameters Json?
   is_active           Boolean         @default(true)
   created_at          DateTime        @default(now())
   updated_at          DateTime        @updatedAt
 
   userApiAccesses     UserApiAccess[]
   usageLogs           ApiUsageLog[]
+
+  @@index([is_active])
 }
 
 model ApiToken {
-  id            BigInt     @id @default(autoincrement())
+  id            BigInt      @id @default(autoincrement())
   user_id       BigInt
-  token         String
+  token         String      @unique
   is_active     Boolean     @default(true)
   created_at    DateTime    @default(now())
   last_used_at  DateTime?
   refreshed_at  DateTime?
 
   user          User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
 }
 
 model UserApiAccess {
@@ -64,6 +77,9 @@ model UserApiAccess {
 
   user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
   api         Api         @relation(fields: [api_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, api_id])
+  @@index([user_id, has_access])
 }
 
 model ApiUsageLog {
@@ -72,14 +88,17 @@ model ApiUsageLog {
   api_id            BigInt
   endpoint          String
   payload           Json?
-  ip                String
+  ip_address        String
   status_code       Int?
   created_at        DateTime   @default(now())
   updated_at        DateTime   @updatedAt
-  api_response_time DateTime?
+  api_response_time Int?
 
   user              User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
   api               Api        @relation(fields: [api_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, api_id, created_at])
+  @@index([created_at]) //useful to delete old logs
+  @@index([user_id, api_id, status_code]) //useful to get/delete old logs based on status code
+
 }
-
-
