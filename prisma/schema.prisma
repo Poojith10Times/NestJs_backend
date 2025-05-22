@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             BigInt         @id @default(autoincrement())
+  email          String         @unique
+  name           String?
+  password_hash  String?
+  status         Status?
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+
+  apiTokens      ApiToken[]
+  apiAccesses    UserApiAccess[]
+  usageLogs      ApiUsageLog[]
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+model Api {
+  id                  BigInt          @id @default(autoincrement())
+  api_name            String
+  slug                String          @unique
+  default_daily_limit Int
+  basic_parameters    Json
+  advanced_parameters Json
+  is_active           Boolean         @default(true)
+  created_at          DateTime        @default(now())
+  updated_at          DateTime        @updatedAt
+
+  userApiAccesses     UserApiAccess[]
+  usageLogs           ApiUsageLog[]
+}
+
+model ApiToken {
+  id            BigInt     @id @default(autoincrement())
+  user_id       BigInt
+  token         String
+  is_active     Boolean     @default(true)
+  created_at    DateTime    @default(now())
+  last_used_at  DateTime?
+  refreshed_at  DateTime?
+
+  user          User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model UserApiAccess {
+  id          BigInt     @id @default(autoincrement())
+  user_id     BigInt
+  api_id      BigInt
+  daily_limit Int
+  has_access  Boolean     @default(true)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  api         Api         @relation(fields: [api_id], references: [id], onDelete: Cascade)
+}
+
+model ApiUsageLog {
+  id                BigInt     @id @default(autoincrement())
+  user_id           BigInt
+  api_id            BigInt
+  endpoint          String
+  payload           Json?
+  ip                String
+  status_code       Int?
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+  api_response_time DateTime?
+
+  user              User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  api               Api        @relation(fields: [api_id], references: [id], onDelete: Cascade)
+}
+
+
