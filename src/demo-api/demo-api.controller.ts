@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Req, UseGuards } from '@nestjs/common';;
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { DemoApiService } from './demo-api.service';
 import { Apis } from 'src/Api-Types/api-types';
