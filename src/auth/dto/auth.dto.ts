@@ -7,7 +7,7 @@ export const AuthResponseSchema = z.object({
     id: z.string(),
     email: z.string(),
     name: z.string().nullable(),
-    status: z.enum(['ACTIVE', 'INACTIVE']).nullable(),
+    status: z.enum(['ACTIVE', 'INACTIVE']).nullable().optional(),
   }),
 });
 
