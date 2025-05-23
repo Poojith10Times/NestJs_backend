@@ -14,7 +14,7 @@ datasource db {
 }
 
 model User {
-  id             BigInt         @id @default(autoincrement())
+  id             String         @id @default(uuid())
   email          String         @unique
   name           String?
   password_hash  String?
@@ -35,7 +35,7 @@ enum Status {
 }
 
 model Api {
-  id                  BigInt          @id @default(autoincrement())
+  id                  String          @id @default(uuid())
   api_name            String          @unique
   slug                String          @unique
   default_daily_limit Int             @default(100)
@@ -52,8 +52,8 @@ model Api {
 }
 
 model ApiToken {
-  id            BigInt      @id @default(autoincrement())
-  user_id       BigInt
+  id            String      @id @default(uuid())
+  user_id       String      @unique
   token         String      @unique
   is_active     Boolean     @default(true)
   created_at    DateTime    @default(now())
@@ -66,9 +66,9 @@ model ApiToken {
 }
 
 model UserApiAccess {
-  id          BigInt     @id @default(autoincrement())
-  user_id     BigInt
-  api_id      BigInt
+  id          String     @id @default(uuid())
+  user_id     String     
+  api_id      String     
   daily_limit Int
   has_access  Boolean     @default(true)
   created_at  DateTime    @default(now())
@@ -82,9 +82,9 @@ model UserApiAccess {
 }
 
 model ApiUsageLog {
-  id                BigInt     @id @default(autoincrement())
-  user_id           BigInt
-  api_id            BigInt
+  id                String     @id @default(uuid())
+  user_id           String     
+  api_id            String     
   endpoint          String
   payload           Json?
   ip_address        String

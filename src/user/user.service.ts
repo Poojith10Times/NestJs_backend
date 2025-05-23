@@ -41,7 +41,7 @@ export class UserService {
 
   async findById(id: string) {
     const user = await this.prisma.user.findUnique({
-      where: { id: BigInt(id) },
+      where: { id },
     });
 
     if (!user) {
