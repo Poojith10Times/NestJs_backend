@@ -8,9 +8,7 @@ import { UserModule } from './user/user.module';
 import { DemoApiController } from './demo-api/demo-api.controller';
 import { DemoApiService } from './demo-api/demo-api.service';
 import { DemoApiModule } from './demo-api/demo-api.module';
-import { ElasticSearchController } from './elastic-search/elastic-search.controller';
 import { ElasticSearchModule } from './elastic-search/elastic-search.module';
-import { ElasticSearchService } from './elastic-search/elastic-search.service';
 
 @Module({
   imports: [

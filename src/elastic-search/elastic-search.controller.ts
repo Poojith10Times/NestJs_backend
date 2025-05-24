@@ -1,7 +1,8 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { ElasticSearchService } from './elastic-search.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Apis } from 'src/Api-Types/api-types';
+import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 
 @Controller('elastic-search')
 export class ElasticSearchController {
@@ -16,5 +17,29 @@ export class ElasticSearchController {
         return {
             data: alias,
         }
+    }
+
+    @Get(Apis.GET_INDEX_DATA.endpoint)
+    @UseGuards(JwtAuthGuard)
+    async getIndexData(@Req() req) {
+        const user_id = req.user.id;
+        const api_id = Apis.GET_INDEX_DATA.id;
+        return await this.elasticSearchService.getIndexData(user_id, api_id);
+    }
+
+    @Get(Apis.GET_PARAMS.endpoint)
+    @UseGuards(JwtAuthGuard)
+    async getParams(@Query('index_name') query: string, @Req() req) {
+        const user_id = req.user.id;
+        const api_id = Apis.GET_PARAMS.id;
+        return await this.elasticSearchService.getParams(user_id, api_id);
+    }
+
+    @Get(Apis.GET_BASIC_ADVANCED_DATA.endpoint)
+    @UseGuards(JwtAuthGuard)
+    async getBasicAdvancedData(@Query() fields: AdvancedFieldsDto, @Req() req) {
+        const user_id = req.user.id;
+        const api_id = Apis.GET_BASIC_ADVANCED_DATA.id;
+        return await this.elasticSearchService.getBasicAdvancedData(user_id, api_id, fields);
     }
 }

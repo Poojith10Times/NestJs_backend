@@ -10,12 +10,20 @@ export const Apis: ApiType = {
         endpoint: 'create-demo',
         id: '8d3bb326-aac2-4c3a-9e56-e810fb2ef5db',
     },
-    // GET_DEMO: {
-    //     endpoint: 'get-demo',
-    //     id: '1234567891',
-    // },
     GET_ALIAS: {
         endpoint: 'get-alias',
         id: '13535bcb-5c7d-43e4-ae37-2c1574b099fb',
+    },
+    GET_INDEX_DATA: {
+        endpoint: 'get-index-data',
+        id: '4913e57b-1e58-4ac5-a30a-732f2c3ad199',
+    },
+    GET_PARAMS: {
+        endpoint: 'get-params',
+        id: 'bd3f34cb-8aaa-4f99-bdf0-bdf819dd72f5',
+    },
+    GET_BASIC_ADVANCED_DATA: {
+        endpoint: 'get-basic-advanced',
+        id: '70d07c70-f4bd-41d1-8dd4-dd5fdbab4320'
     }
 }
