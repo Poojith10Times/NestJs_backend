@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { CategoryDateDto } from './dto/category-date.dto';
 
 @Injectable()
 export class ElasticSearchService {
@@ -111,29 +112,85 @@ export class ElasticSearchService {
         return {data: basic_advanced_data.body.hits.hits};
     }
 
-    async searchEvent(user_id: string, api_id: string, event_status?: string) {
-        const isVerified = await this.quotaVerification(user_id, api_id);
+    // async searchEvent(user_id: string, api_id: string, event_status?: string) {
+    //     const isVerified = await this.quotaVerification(user_id, api_id);
+    //     if (!isVerified) throw new NotFoundException('Permission denied');
+
+    //     const searchQuery = event_status 
+    //         ? {
+    //             query: {
+    //                 term: {
+    //                     "event_status": event_status
+    //                 }
+    //             }
+    //         }
+    //         : {
+    //             query: {
+    //                 match_all: {}
+    //             }
+    //         };
+
+    //     const search_result = await this.elasticsearchService.search({
+    //         index: process.env.INDEX_NAME,
+    //         body: searchQuery
+    //     });
+
+    //     return { data: search_result.body.hits.hits };
+    // }
+
+    // get event data based on category and date range
+    async getEventData(userId: string, api_id: string, fields: CategoryDateDto) {
+        const isVerified = await this.quotaVerification(userId, api_id);
         if (!isVerified) throw new NotFoundException('Permission denied');
 
-        const searchQuery = event_status 
-            ? {
+        const { category, endDate_gte, endDate_lte, event_status, event_type } = fields;
+        
+        const must: any[] = [];
+
+        // add only the filters that are provided
+        // TODO: create separate functio for query building
+        if (category) {
+            must.push({ match: { event_categoryName: category } });
+        }
+        if (endDate_gte || endDate_lte) {
+            const range: any = {};
+            if (endDate_gte) range.gte = endDate_gte;
+            if (endDate_lte) range.lte = endDate_lte;
+            must.push({ range: { event_endDate: range } });
+        }
+        if (event_status) {
+        must.push({ term: { event_status: event_status } });
+        }
+        
+        if (event_type) {
+            must.push({ term: { event_type: event_type } });
+        }
+
+        if (must.length === 0) {
+            let emptyFilterData = await this.elasticsearchService.search({
+                index: process.env.INDEX_NAME,
+                body: {
+                    query: {
+                        match_all: {},
+                    }
+                }
+            })
+            return { data: emptyFilterData.body.hits.hits };
+        }
+
+        const eventData = await this.elasticsearchService.search({
+            index: process.env.INDEX_NAME,
+            body: {
                 query: {
-                    term: {
-                        "event_status": event_status
+                    bool: {
+                        must: [
+                            must,
+                        ]
                     }
                 }
             }
-            : {
-                query: {
-                    match_all: {}
-                }
-            };
+        })
 
-        const search_result = await this.elasticsearchService.search({
-            index: process.env.INDEX_NAME,
-            body: searchQuery
-        });
-
-        return { data: search_result.body.hits.hits };
+        return { data: eventData.body.hits.hits };
     }
 }
