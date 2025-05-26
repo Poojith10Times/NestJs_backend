@@ -2,8 +2,7 @@ import { CategoryDateDto } from "src/elastic-search/dto/category-date.dto";
 
 
 export async function queryBuilder(fields: CategoryDateDto) {
-    const { category, endDate_gte, endDate_lte, event_id, startDate_gte, startDate_lte } = fields;
-    const { category, endDate_gte, endDate_lte, createdAt_gte, createdAt_lte, event_id, impactScore_gte, impactScore_lte, event_status, event_type, event_frequency } = fields;
+    const { category, endDate_gte, endDate_lte, createdAt_gte, createdAt_lte, event_id, impactScore_gte, impactScore_lte, event_status, event_type, event_frequency, startDate_gte, startDate_lte } = fields;
 
     const must: any[] = [];
 
