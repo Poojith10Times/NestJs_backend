@@ -133,7 +133,19 @@ export class ElasticSearchService {
             must.push({ range: { event_endDate: range } });
         }
 
-        const eventData= await this.elasticsearchService.search({
+        if (must.length === 0) {
+            let emptyFilterData = await this.elasticsearchService.search({
+                index: process.env.INDEX_NAME,
+                body: {
+                    query: {
+                        match_all: {},
+                    }
+                }
+            })
+            return { data: emptyFilterData.body.hits.hits };
+        }
+
+        const eventData = await this.elasticsearchService.search({
             index: process.env.INDEX_NAME,
             body: {
                 query: {
