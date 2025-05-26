@@ -110,4 +110,30 @@ export class ElasticSearchService {
 
         return {data: basic_advanced_data.body.hits.hits};
     }
+
+    async searchEvent(user_id: string, api_id: string, event_status?: string) {
+        const isVerified = await this.quotaVerification(user_id, api_id);
+        if (!isVerified) throw new NotFoundException('Permission denied');
+
+        const searchQuery = event_status 
+            ? {
+                query: {
+                    term: {
+                        "event_status": event_status
+                    }
+                }
+            }
+            : {
+                query: {
+                    match_all: {}
+                }
+            };
+
+        const search_result = await this.elasticsearchService.search({
+            index: process.env.INDEX_NAME,
+            body: searchQuery
+        });
+
+        return { data: search_result.body.hits.hits };
+    }
 }
