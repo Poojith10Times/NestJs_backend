@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { CategoryDateDto } from './dto/category-date.dto';
+import { queryBuilder } from 'src/utils/shared-functions';
 
 @Injectable()
 export class ElasticSearchService {
@@ -143,33 +144,13 @@ export class ElasticSearchService {
         const isVerified = await this.quotaVerification(userId, api_id);
         if (!isVerified) throw new NotFoundException('Permission denied');
 
-        const { category, endDate_gte, endDate_lte, event_status, event_type } = fields;
-        
-        const must: any[] = [];
-
-        // add only the filters that are provided
-        // TODO: create separate functio for query building
-        if (category) {
-            must.push({ match: { event_categoryName: category } });
-        }
-        if (endDate_gte || endDate_lte) {
-            const range: any = {};
-            if (endDate_gte) range.gte = endDate_gte;
-            if (endDate_lte) range.lte = endDate_lte;
-            must.push({ range: { event_endDate: range } });
-        }
-        if (event_status) {
-        must.push({ term: { event_status: event_status } });
-        }
-        
-        if (event_type) {
-            must.push({ term: { event_type: event_type } });
-        }
+        const must = await queryBuilder(fields);
 
         if (must.length === 0) {
             let emptyFilterData = await this.elasticsearchService.search({
                 index: process.env.INDEX_NAME,
                 body: {
+                    size: 1,
                     query: {
                         match_all: {},
                     }
@@ -177,6 +158,7 @@ export class ElasticSearchService {
             })
             return { data: emptyFilterData.body.hits.hits };
         }
+        
 
         const eventData = await this.elasticsearchService.search({
             index: process.env.INDEX_NAME,
