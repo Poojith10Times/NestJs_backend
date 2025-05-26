@@ -12,23 +12,27 @@ export const Apis: ApiType = {
     },
     GET_ALIAS: {
         endpoint: 'get-alias',
-        id: '13535bcb-5c7d-43e4-ae37-2c1574b099fb',
+        id: '8e30c76a-916b-4048-94ec-3ad087187a4e',
     },
     GET_INDEX_DATA: {
         endpoint: 'get-index-data',
-        id: '4913e57b-1e58-4ac5-a30a-732f2c3ad199',
+        id: 'bf630d85-2819-4089-a8a8-7bc54d59f4c1',
     },
     GET_PARAMS: {
         endpoint: 'get-params',
-        id: 'bd3f34cb-8aaa-4f99-bdf0-bdf819dd72f5',
+        id: '4c9b5645-e89f-46be-a03b-95a0df47be77',
     },
     GET_BASIC_ADVANCED_DATA: {
         endpoint: 'get-basic-advanced',
         id: '70d07c70-f4bd-41d1-8dd4-dd5fdbab4320'
     },
+    SEARCH_EVENT: {
+        endpoint: 'search-event',
+        id: 'bc3f92b8-ab8f-4156-a3e5-97efd229492a', 
+    },
     GET_CATEGORY_DATA: {
         endpoint: 'get-category-data',
-        id: '2f6b1311-3241-4fc5-a897-2a84eb9c4aa6',
+        id: '3e9d0e4e-b9c9-4e16-8468-9910075c9b88',
     }
 
 }
