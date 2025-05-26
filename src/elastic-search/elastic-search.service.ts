@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { CategoryDateDto } from './dto/category-date.dto';
 
 @Injectable()
 export class ElasticSearchService {
@@ -109,5 +110,42 @@ export class ElasticSearchService {
         })
 
         return {data: basic_advanced_data.body.hits.hits};
+    }
+
+    // get event data based on category and date range
+    async getEventData(userId: string, api_id: string, fields: CategoryDateDto) {
+        const isVerified = await this.quotaVerification(userId, api_id);
+        if (!isVerified) throw new NotFoundException('Permission denied');
+
+        const { category, endDate_gte, endDate_lte } = fields;
+        
+        const must: any[] = [];
+
+        // add only the filters that are provided
+        // TODO: create separate functio for query building
+        if (category) {
+            must.push({ match: { event_categoryName: category } });
+        }
+        if (endDate_gte || endDate_lte) {
+            const range: any = {};
+            if (endDate_gte) range.gte = endDate_gte;
+            if (endDate_lte) range.lte = endDate_lte;
+            must.push({ range: { event_endDate: range } });
+        }
+
+        const eventData= await this.elasticsearchService.search({
+            index: process.env.INDEX_NAME,
+            body: {
+                query: {
+                    bool: {
+                        must: [
+                            must,
+                        ]
+                    }
+                }
+            }
+        })
+
+        return { data: eventData.body.hits.hits };
     }
 }

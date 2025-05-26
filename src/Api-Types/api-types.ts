@@ -25,5 +25,10 @@ export const Apis: ApiType = {
     GET_BASIC_ADVANCED_DATA: {
         endpoint: 'get-basic-advanced',
         id: '70d07c70-f4bd-41d1-8dd4-dd5fdbab4320'
+    },
+    GET_CATEGORY_DATA: {
+        endpoint: 'get-category-data',
+        id: '2f6b1311-3241-4fc5-a897-2a84eb9c4aa6',
     }
+
 }
