@@ -6,6 +6,8 @@ export const CategoryDateSchema = z.object({
     category: z.string().optional(),
     endDate_gte: z.string().date().optional(),
     endDate_lte: z.string().date().optional(),
+    startDate_gte: z.string().date().optional(),
+    startDate_lte: z.string().date().optional(),
     createdAt_gte: z.string().date().optional(),
     createdAt_lte: z.string().date().optional(),
     impactScore_gte: z.coerce.number().optional(),

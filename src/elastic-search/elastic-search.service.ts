@@ -4,6 +4,7 @@ import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { CategoryDateDto } from './dto/category-date.dto';
 import { queryBuilder } from 'src/utils/shared-functions';
+import { serialize } from 'v8';
 
 @Injectable()
 export class ElasticSearchService {
@@ -173,6 +174,9 @@ export class ElasticSearchService {
             }
         })
 
-        return { data: eventData.body.hits.hits };
+        return { 
+            count: JSON.stringify(eventData.body.hits.total, null, 2), 
+            data: eventData.body.hits.hits 
+        };
     }
 }
