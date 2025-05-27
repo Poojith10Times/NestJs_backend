@@ -12,6 +12,13 @@ export const CategoryDateSchema = z.object({
     createdAt_lte: z.string().date().optional(),
     impactScore_gte: z.coerce.number().optional(),
     impactScore_lte: z.coerce.number().optional(),
+    inboundScore_gte: z.coerce.number().optional(),
+    inboundScore_lte: z.coerce.number().optional(),
+    internationalScore_gte: z.coerce.number().optional(),
+    internationalScore_lte: z.coerce.number().optional(),
+    editions_gte: z.coerce.number().optional(),
+    editions_lte: z.coerce.number().optional(),
+
     designation: z.string().optional(),
     event_id: z.string().optional(),
     event_status: z.enum(['A', 'C', 'P', 'U', 'o', 'r'], {
@@ -22,8 +29,10 @@ export const CategoryDateSchema = z.object({
     }).optional(),
     event_frequency: z.enum(['Annual','One-time','Biennial','Bi-annual','Monthly','Weekly','Quarterly',' null','Triennial',' One-time','Half- Yearly',' default','Quinquennial'], {
         invalid_type_error: "event_frequency must be one of: Annual, One-time, Biennial, Bi-annual, Monthly, Weekly, Quarterly, null, Triennial, One-time, Half-Yearly, default, Quinquennial"
+    }).optional(),
+    entry_type: z.enum(['free','paid','not_available','free-paid'], {
+        invalid_type_error: "entry_type must be one of: free, paid, not_available, free-paid"
     }).optional()
-
 })
 
 export class CategoryDateDto extends createZodDto(CategoryDateSchema) {}
