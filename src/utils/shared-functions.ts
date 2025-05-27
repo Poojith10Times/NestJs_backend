@@ -1,57 +1,56 @@
 import { CategoryDateDto } from "src/elastic-search/dto/category-date.dto";
 
 
-export async function queryBuilder(fields: CategoryDateDto) {
-    const { category, endDate_gte, endDate_lte, createdAt_gte, createdAt_lte, event_id, impactScore_gte, impactScore_lte, event_status, event_type, event_frequency, startDate_gte, startDate_lte } = fields;
+export async function queryBuilder(fields: CategoryDateDto): Promise<any[]> {
 
     const must: any[] = [];
 
-    if (category) { // filter by category
-        must.push({ match: { event_categoryName: category } });
+    if (fields.category) { // filter by category
+        must.push({ match: { event_categoryName: fields.category } });
     }
 
-    if (startDate_gte || startDate_lte) { // filter by date range
+    if (fields.startDate_gte || fields.startDate_lte) { // filter by date range
         const range: any = {};
-        if (startDate_gte) range.gte = startDate_gte;
-        if (startDate_lte) range.lte = startDate_lte;
+        if (fields.startDate_gte) range.gte = fields.startDate_gte;
+        if (fields.startDate_lte) range.lte = fields.startDate_lte;
         must.push({ range: { event_startDate: range } });
     }
 
-    if (endDate_gte || endDate_lte) { // filter by date range
+    if (fields.endDate_gte || fields.endDate_lte) { // filter by date range
         const range: any = {};
-        if (endDate_gte) range.gte = endDate_gte;
-        if (endDate_lte) range.lte = endDate_lte;
+        if (fields.endDate_gte) range.gte = fields.endDate_gte;
+        if (fields.endDate_lte) range.lte = fields.endDate_lte;
         must.push({ range: { event_endDate: range } });
     }
 
-    if (createdAt_gte || createdAt_lte) { // filter by created date range
+    if (fields.createdAt_gte || fields.createdAt_lte) { // filter by created date range
         const range: any = {};
-        if (createdAt_gte) range.gte = createdAt_gte;
-        if (createdAt_lte) range.lte = createdAt_lte;
+        if (fields.createdAt_gte) range.gte = fields.createdAt_gte;
+        if (fields.createdAt_lte) range.lte = fields.createdAt_lte;
         must.push({ range: { event_created: range } });
     }
 
-    if (event_id) {
-        must.push({ match: { event_id: event_id } });
+    if (fields.event_id) {
+        must.push({ match: { event_id: fields.event_id } });
     }
 
-    if (impactScore_gte || impactScore_lte) { // filter by impact score range
+    if (fields.impactScore_gte || fields.impactScore_lte) { // filter by impact score range
         const range: any = {};
-        if (impactScore_gte) range.gte = impactScore_gte;
-        if (impactScore_lte) range.lte = impactScore_lte;
+        if (fields.impactScore_gte) range.gte = fields.impactScore_gte;
+        if (fields.impactScore_lte) range.lte = fields.impactScore_lte;
         must.push({ range: { event_impactScore: range } });
     }
 
-    if(event_status) {
-        must.push({ match: { event_status: event_status } });
+    if(fields.event_status) {
+        must.push({ match: { event_status: fields.event_status } });
     }
 
-    if(event_type) {
-        must.push({ match: { event_type: event_type } });
+    if(fields.event_type) {
+        must.push({ match: { event_type: fields.event_type } });
     }
 
-    if(event_frequency) {
-        must.push({ match: { event_frequency: event_frequency } });
+    if(fields.event_frequency) {
+        must.push({ match: { event_frequency: fields.event_frequency } });
     }
 
     return must;

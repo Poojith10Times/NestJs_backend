@@ -140,6 +140,9 @@ export class ElasticSearchService {
     //     return { data: search_result.body.hits.hits };
     // }
 
+
+    
+
     // get event data based on category and date range
     async getEventData(userId: string, api_id: string, fields: CategoryDateDto) {
         const isVerified = await this.quotaVerification(userId, api_id);
