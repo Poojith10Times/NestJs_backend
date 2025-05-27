@@ -10,78 +10,36 @@ export class SharedFunctionsService {
 
         const must: any[] = [];
 
-        if (fields.category) { 
-            must.push({ match: { event_categoryName: fields.category } });
+        // DRY
+        const addMatch = (field: string, value?: string) => {
+            if(value != undefined){
+                must.push({ match: { [field]: value } });
+            }
         }
 
-        if (fields.startDate_gte || fields.startDate_lte) { 
+        const addRange = (field: string, gte?: string | number, lte?: string | number) => {
             const range: any = {};
-            if (fields.startDate_gte) range.gte = fields.startDate_gte;
-            if (fields.startDate_lte) range.lte = fields.startDate_lte;
-            must.push({ range: { event_startDate: range } });
+            if(gte != undefined) range.gte = gte;
+            if(lte != undefined) range.lte = lte;
+            if(Object.keys(range).length > 0){
+                must.push({ range: { [field]: range } });
+            }
         }
 
-        if (fields.endDate_gte || fields.endDate_lte) { 
-            const range: any = {};
-            if (fields.endDate_gte) range.gte = fields.endDate_gte;
-            if (fields.endDate_lte) range.lte = fields.endDate_lte;
-            must.push({ range: { event_endDate: range } });
-        }
+        addMatch('event_categoryName', fields.category);
+        addMatch('event_id', fields.event_id);
+        addMatch('event_status', fields.event_status);
+        addMatch('event_type', fields.event_type);
+        addMatch('user_designationName', fields.designation);
+        addMatch('event_frequency', fields.event_frequency);
 
-        if (fields.createdAt_gte || fields.createdAt_lte) { 
-            const range: any = {};
-            if (fields.createdAt_gte) range.gte = fields.createdAt_gte;
-            if (fields.createdAt_lte) range.lte = fields.createdAt_lte;
-            must.push({ range: { event_created: range } });
-        }
-
-        if (fields.event_id) {
-            must.push({ match: { event_id: fields.event_id } });
-        }
-
-        if (fields.impactScore_gte || fields.impactScore_lte) { 
-            const range: any = {};
-            if (fields.impactScore_gte) range.gte = fields.impactScore_gte;
-            if (fields.impactScore_lte) range.lte = fields.impactScore_lte;
-            must.push({ range: { event_impactScore: range } });
-        }
-
-        if(fields.event_status) {
-            must.push({ match: { event_status: fields.event_status } });
-        }
-
-        if(fields.event_type) {
-            must.push({ match: { event_type: fields.event_type } });
-        }
-
-        if(fields.event_frequency) {
-            must.push({ match: { event_frequency: fields.event_frequency } });
-        }
-
-        if (fields.designation) {
-            must.push({ match: { user_designationName: fields.designation } });
-        }
-
-        if (fields.inboundScore_gte || fields.inboundScore_lte) { 
-            const range: any = {};
-            if (fields.inboundScore_gte) range.gte = fields.inboundScore_gte;
-            if (fields.inboundScore_lte) range.lte = fields.inboundScore_lte;
-            must.push({ range: { event_inboundScore: range } });
-        }
-
-        if (fields.internationalScore_gte || fields.internationalScore_lte) {
-            const range: any = {};
-            if (fields.internationalScore_gte) range.gte = fields.internationalScore_gte;
-            if (fields.internationalScore_lte) range.lte = fields.internationalScore_lte;
-            must.push({ range: { event_internationalScore: range } });
-        }
-
-        if (fields.editions_gte || fields.editions_lte) { 
-            const range: any = {};
-            if (fields.editions_gte) range.gte = fields.editions_gte;
-            if (fields.editions_lte) range.lte = fields.editions_lte;
-            must.push({ range: { event_editionsCount: range } });
-        }
+        addRange('event_startDate', fields.startDate_gte, fields.startDate_lte);
+        addRange('event_endDate', fields.endDate_gte, fields.endDate_lte);
+        addRange('event_created', fields.createdAt_gte, fields.createdAt_lte);
+        addRange('event_impactScore', fields.impactScore_gte, fields.impactScore_lte);
+        addRange('event_inboundScore', fields.inboundScore_gte, fields.inboundScore_lte);
+        addRange('event_internationalScore', fields.internationalScore_gte, fields.internationalScore_lte);
+        addRange('event_editionsCount', fields.editions_gte, fields.editions_lte);
 
         return must;
     }
