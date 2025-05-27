@@ -12,6 +12,7 @@ export const CategoryDateSchema = z.object({
     createdAt_lte: z.string().date().optional(),
     impactScore_gte: z.coerce.number().optional(),
     impactScore_lte: z.coerce.number().optional(),
+    designation: z.string().optional(),
     event_id: z.string().optional(),
     event_status: z.enum(['A', 'C', 'P', 'U', 'o', 'r'], {
         invalid_type_error: "event_status must be one of: A, C, P, U, o, r"

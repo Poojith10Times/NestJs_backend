@@ -2,7 +2,7 @@ import { CategoryDateDto } from "src/elastic-search/dto/category-date.dto";
 
 
 export async function queryBuilder(fields: CategoryDateDto) {
-    const { category, endDate_gte, endDate_lte, createdAt_gte, createdAt_lte, event_id, impactScore_gte, impactScore_lte, event_status, event_type, event_frequency, startDate_gte, startDate_lte } = fields;
+    const { category, endDate_gte, endDate_lte, createdAt_gte, createdAt_lte, event_id, designation, impactScore_gte, impactScore_lte, event_status, event_type, event_frequency, startDate_gte, startDate_lte } = fields;
 
     const must: any[] = [];
 
@@ -33,6 +33,10 @@ export async function queryBuilder(fields: CategoryDateDto) {
 
     if (event_id) {
         must.push({ match: { event_id: event_id } });
+    }
+
+    if (designation) {
+        must.push({ match: { user_designationName: designation } });
     }
 
     if (impactScore_gte || impactScore_lte) { // filter by impact score range
