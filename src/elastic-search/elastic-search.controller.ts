@@ -15,7 +15,7 @@ export class ElasticSearchController {
     async getAlias(@Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_ALIAS.id;
-        const alias = await this.elasticSearchService.getAlias(user_id, api_id);
+        const alias = await this.elasticSearchService.getAlias(user_id, api_id, req.ip);
         return {
             data: alias,
         }
@@ -26,15 +26,15 @@ export class ElasticSearchController {
     async getIndexData(@Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_INDEX_DATA.id;
-        return await this.elasticSearchService.getIndexData(user_id, api_id);
+        return await this.elasticSearchService.getIndexData(user_id, api_id, req.ip);
     }
 
     @Get(Apis.GET_PARAMS.endpoint)
     @UseGuards(JwtAuthGuard)
-    async getParams(@Query('index_name') query: string, @Req() req) {
+    async getParams(@Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_PARAMS.id;
-        return await this.elasticSearchService.getParams(user_id, api_id);
+        return await this.elasticSearchService.getParams(user_id, api_id, req.ip);
     }
 
     @Get(Apis.GET_BASIC_ADVANCED_DATA.endpoint)
@@ -42,7 +42,7 @@ export class ElasticSearchController {
     async getBasicAdvancedData(@Query() fields: AdvancedFieldsDto, @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_BASIC_ADVANCED_DATA.id;
-        return await this.elasticSearchService.getBasicAdvancedData(user_id, api_id, fields);
+        return await this.elasticSearchService.getBasicAdvancedData(user_id, api_id, fields, req.ip);
     }
 
     // @Get(Apis.SEARCH_EVENT.endpoint)
@@ -58,6 +58,6 @@ export class ElasticSearchController {
     async getCategoryData(@Query() fields: CategoryDateDto, @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_CATEGORY_DATA.id;
-        return await this.elasticSearchService.getEventData(user_id, api_id, fields);
+        return await this.elasticSearchService.getEventData(user_id, api_id, fields, req.ip);
     }
 }

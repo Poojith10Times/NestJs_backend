@@ -3,6 +3,7 @@ import { ElasticSearchService } from './elastic-search.service';
 import { ElasticSearchController } from './elastic-search.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { UtilsModule } from 'src/utils/utils.module';
 
 @Module({
   providers: [ElasticSearchService],
@@ -17,6 +18,7 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
       }),
       inject: [ConfigService],
     }),
+    UtilsModule,
   ],
 })
 

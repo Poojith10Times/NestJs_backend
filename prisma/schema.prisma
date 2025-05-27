@@ -90,8 +90,7 @@ model ApiUsageLog {
   ip_address        String
   status_code       Int?
   created_at        DateTime   @default(now())
-  updated_at        DateTime   @updatedAt
-  api_response_time Int?
+  api_response_time Float?
 
   user              User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
   api               Api        @relation(fields: [api_id], references: [id], onDelete: Cascade)
