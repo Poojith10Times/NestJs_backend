@@ -100,11 +100,7 @@ export class SharedFunctionsService {
                 }
             })
         }catch(error: any){
-            if(error.code === 'P2002'){
-                throw new BadRequestException('Duplicate entry');
-            }else{
-                throw error;
-            }
+           throw error;
         }
     }
 }
