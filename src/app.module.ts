@@ -9,6 +9,7 @@ import { DemoApiController } from './demo-api/demo-api.controller';
 import { DemoApiService } from './demo-api/demo-api.service';
 import { DemoApiModule } from './demo-api/demo-api.module';
 import { ElasticSearchModule } from './elastic-search/elastic-search.module';
+import { UtilsModule } from './utils/utils.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ElasticSearchModule } from './elastic-search/elastic-search.module';
     UserModule,
     DemoApiModule,
     ElasticSearchModule,
+    UtilsModule,
   ],
   providers: [
     {
