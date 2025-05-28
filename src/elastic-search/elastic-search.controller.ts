@@ -4,7 +4,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Apis } from 'src/Api-Types/api-types';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 // import { EventSearchDto } from './dto/event-search.dto';
-import { EventDateDto } from './dto/event-data.dto';
+import { EventDataDto } from './dto/event-data.dto';
 
 @Controller('elastic-search')
 export class ElasticSearchController {
@@ -55,7 +55,7 @@ export class ElasticSearchController {
 
     @Get(Apis.GET_EVENT_DATA.endpoint)
     @UseGuards(JwtAuthGuard)
-    async getEventData(@Query() fields: EventDateDto, @Req() req) {
+    async getEventData(@Query() fields: EventDataDto, @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_EVENT_DATA.id;
         return await this.elasticSearchService.getEventData(user_id, api_id, fields, req.ip);

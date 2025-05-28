@@ -2,7 +2,7 @@ import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
 
-export const EventDateSchema = z.object({
+export const EventDataSchema = z.object({
     category: z.string().optional(),
     endDate_gte: z.string().date().optional(),
     endDate_lte: z.string().date().optional(),
@@ -35,4 +35,4 @@ export const EventDateSchema = z.object({
     }).optional()
 })
 
-export class EventDateDto extends createZodDto(EventDateSchema) {}
+export class EventDataDto extends createZodDto(EventDataSchema) {}

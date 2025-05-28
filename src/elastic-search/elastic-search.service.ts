@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { EventDateDto } from './dto/event-data.dto';
+import { EventDataDto } from './dto/event-data.dto';
 import { SharedFunctionsService } from 'src/utils/shared-functions.service';
 import { Apis } from 'src/Api-Types/api-types';
 
@@ -183,7 +183,7 @@ export class ElasticSearchService {
     }
 
     // get event data based on category and date range
-    async getEventData(userId: string, api_id: string, fields: EventDateDto, ip_address: string) {
+    async getEventData(userId: string, api_id: string, fields: EventDataDto, ip_address: string) {
         const startTime = Date.now();
         let eventData: any;
         let statusCode: number = 200;
