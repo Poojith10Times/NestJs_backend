@@ -4,7 +4,6 @@ import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { EventDataDto } from './dto/event-data.dto';
 import { SharedFunctionsService } from 'src/utils/shared-functions.service';
-import { serialize } from 'v8';
 import { Apis } from 'src/Api-Types/api-types';
 
 @Injectable()
@@ -29,15 +28,6 @@ export class ElasticSearchService {
         })
         if (!access) throw new NotFoundException('Permission denied');
         if (access.daily_limit === 0) throw new NotFoundException('Daily limit reached');
-        const updated_daily_limit = access.daily_limit - 1;
-        await this.prismaService.userApiAccess.update({
-            where: {
-                id: access.id,
-            },
-            data: {
-                daily_limit: updated_daily_limit,
-            }
-        })
         return true;
     }
 
@@ -86,7 +76,7 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveApiData(user_id, api_id,Apis.GET_ALIAS.endpoint, apiResponseTime, ip_address, statusCode);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_ALIAS.endpoint, apiResponseTime, ip_address, statusCode);
         }
 
         return alias;
@@ -120,7 +110,7 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveApiData(user_id, api_id,Apis.GET_INDEX_DATA.endpoint, apiResponseTime, ip_address, statusCode);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_INDEX_DATA.endpoint, apiResponseTime, ip_address, statusCode);
         }
         return {data: index_data.body.hits.hits};
     }
@@ -142,7 +132,7 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveApiData(user_id, api_id,Apis.GET_PARAMS.endpoint, apiResponseTime, ip_address, statusCode);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_PARAMS.endpoint, apiResponseTime, ip_address, statusCode);
         }
         return {data: params};
     }
@@ -187,7 +177,7 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveApiData(user_id, api_id,Apis.GET_BASIC_ADVANCED_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_BASIC_ADVANCED_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
         }
         return {data: basic_advanced_data.body.hits.hits};
     }
@@ -243,7 +233,7 @@ export class ElasticSearchService {
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
             try{
-                await this.sharedFunctionsService.saveApiData(userId, api_id,Apis.GET_CATEGORY_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
+                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
             }catch(error){
                 throw error;
             }

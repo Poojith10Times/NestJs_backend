@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { EventDataDto } from "src/elastic-search/dto/event-data.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 
@@ -44,7 +44,7 @@ export class SharedFunctionsService {
         return must;
     }
 
-    async saveApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, payload: any = {}) {
+    async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, payload: any = {}) {
         try{
             await this.prismaService.apiUsageLog.create({
                 data: {
@@ -55,6 +55,20 @@ export class SharedFunctionsService {
                     ip_address,
                     status_code: statusCode,
                     api_response_time: apiResponseTime,
+                }
+            })
+
+            await this.prismaService.userApiAccess.update({
+                where: {
+                    user_id_api_id: {
+                        user_id,
+                        api_id,
+                    }
+                },
+                data: {
+                    daily_limit: {
+                        decrement: 1,
+                    }
                 }
             })
         }catch(error: any){
