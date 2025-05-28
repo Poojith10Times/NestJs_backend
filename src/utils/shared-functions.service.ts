@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { CategoryDateDto } from "src/elastic-search/dto/category-date.dto";
+import { EventDateDto } from "src/elastic-search/dto/event-data.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class SharedFunctionsService {
     constructor(private readonly prismaService: PrismaService) {}
 
-    async queryBuilder(fields: CategoryDateDto): Promise<any[]> {
+    async queryBuilder(fields: EventDateDto): Promise<any[]> {
 
         const must: any[] = [];
 
