@@ -16,16 +16,16 @@ export class ElasticSearchService {
 
     async quotaVerification(user_id: string, api_id: string) {
         const access = await this.prismaService.userApiAccess.findFirst({
-            where: {
-                user_id,
-                api_id,
-                has_access: true,
-            },
-            select: {
-                id: true,
-                daily_limit: true,
-            }
-        })
+                where: {
+                    user_id,
+                    api_id,
+                    has_access: true,
+                },
+                select: {
+                    id: true,
+                    daily_limit: true,
+                }
+            })
         if (!access) throw new NotFoundException('Permission denied');
         if (access.daily_limit === 0) throw new NotFoundException('Daily limit reached');
         return true;
@@ -38,20 +38,8 @@ export class ElasticSearchService {
                 _source: requiredFields,
                 query: {
                     bool: {
-                        must: [
-                            {
-                                match: {
-                                    "event_published": "1",
-                                }
-                            }
-                        ],
-                        must_not: [
-                            {
-                                match: {
-                                    "event_status": "U",
-                                }
-                            }
-                        ]
+                        must: [{ match: { "event_published": "1" } }],
+                        must_not: [{ match: { "event_status": "U" } }]
                     }
                 }
             }

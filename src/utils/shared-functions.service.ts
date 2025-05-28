@@ -46,30 +46,32 @@ export class SharedFunctionsService {
 
     async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, payload: any = {}) {
         try{
-            await this.prismaService.apiUsageLog.create({
-                data: {
-                    user_id,
-                    api_id,
-                    endpoint,
-                    payload,
-                    ip_address,
-                    status_code: statusCode,
-                    api_response_time: apiResponseTime,
-                }
-            })
-
-            await this.prismaService.userApiAccess.update({
-                where: {
-                    user_id_api_id: {
+            await this.prismaService.$transaction(async (tx) => {
+                await tx.apiUsageLog.create({
+                    data: {
                         user_id,
                         api_id,
+                        endpoint,
+                        payload,
+                        ip_address,
+                        status_code: statusCode,
+                        api_response_time: apiResponseTime,
                     }
-                },
-                data: {
-                    daily_limit: {
-                        decrement: 1,
+                })
+    
+                await tx.userApiAccess.update({
+                    where: {    
+                        user_id_api_id: {
+                            user_id,
+                            api_id,
+                        }
+                    },
+                    data: {
+                        daily_limit: {
+                            decrement: 1,
+                        }
                     }
-                }
+                })
             })
         }catch(error: any){
            throw error;
