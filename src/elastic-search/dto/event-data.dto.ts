@@ -37,6 +37,15 @@ export const FilterDataSchema = z.object({
 export class FilterDataDto extends createZodDto(FilterDataSchema) {}
 
 export const ResponseDataSchema= z.object({
+    limit: z.string().optional().default("20")
+    .refine((val) => {
+        if (Number(val) > 20) {
+            return false;
+        }
+        return true;
+    }, {
+        message: "Limit must be less than or equal to 20"
+    }),
     event_countryName: z.string().optional(),
     event_created: z.string().optional(),
     event_exhibitors: z.string().optional(),

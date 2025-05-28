@@ -200,7 +200,7 @@ export class ElasticSearchService {
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {
-                        size: 1,
+                        size: responseFields.limit,
                         _source: requiredFields,
                         query: {
                             bool: { must: [must,] }
@@ -211,7 +211,7 @@ export class ElasticSearchService {
             }
 
             response = {
-                count: eventData?.body?.hits?.total,
+                count: eventData?.body?.hits?.hits.length,
                 data: eventData?.body?.hits?.hits.map(hit => hit._source),
             }
         }catch(error){
