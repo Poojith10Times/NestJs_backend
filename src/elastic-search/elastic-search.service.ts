@@ -218,22 +218,6 @@ export class ElasticSearchService {
                 statusCode = eventData.statusCode || 200;
             }else{
                 const must = await this.sharedFunctionsService.queryBuilder(fields);
-                // if there is no must query generated then return empty filter data
-                // if (must.length === 0) {
-                //     let emptyFilterData = await this.elasticsearchService.search({
-                //         index: process.env.INDEX_NAME,
-                //         body: {
-                //             _source: requiredFields,
-                //             query: { match_all: {} }
-                //         }
-                //     })
-                //     statusCode = emptyFilterData.statusCode || 200;
-                //     response = {
-                //         count: JSON.stringify(emptyFilterData.body.hits.total, null, 2),
-                //         data: emptyFilterData.body.hits.hits,
-                //     };
-                //     return response;
-                // }
 
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
