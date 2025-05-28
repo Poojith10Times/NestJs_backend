@@ -203,9 +203,12 @@ export class ElasticSearchService {
                         }
                     }
                 })
-                return { data: emptyFilterData.body.hits.hits };
+                const StandardEmptyData = this.StandardElasticsearchResponse(emptyFilterData.body.hits.hits);
+                return {
+                    count: emptyFilterData.body.hits.total,
+                    data: StandardEmptyData
+                };
             }
-            
 
             eventData = await this.elasticsearchService.search({
                 index: process.env.INDEX_NAME,
@@ -231,9 +234,17 @@ export class ElasticSearchService {
             await this.sharedFunctionsService.saveApiData(userId, api_id,Apis.GET_CATEGORY_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
         }
 
+        const StandardResponse = this.StandardElasticsearchResponse(eventData.body.hits.hits);
+
         return { 
             count: JSON.stringify(eventData.body.hits.total, null, 2), 
-            data: eventData.body.hits.hits 
+            data: StandardResponse 
         };
     }
+
+    private StandardElasticsearchResponse(hits: any[]): any[] {
+    return hits.map(hit => {
+        return hit._source;
+    });
+}
 }
