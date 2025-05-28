@@ -41,6 +41,34 @@ export class ElasticSearchService {
         return true;
     }
 
+    async defaultCaseData(requiredFields: string[]) {
+        const eventData = await this.elasticsearchService.search({
+            index: process.env.INDEX_NAME,
+            body: {
+                _source: requiredFields,
+                query: {
+                    bool: {
+                        must: [
+                            {
+                                match: {
+                                    "event_published": "1",
+                                }
+                            }
+                        ],
+                        must_not: [
+                            {
+                                match: {
+                                    "event_status": "U",
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        })
+        return eventData;
+    }
+
     async getAlias(user_id: string, api_id: string, ip_address: string) {
         const startTime = Date.now();
         let alias: any;
@@ -169,71 +197,74 @@ export class ElasticSearchService {
         const startTime = Date.now();
         let eventData: any;
         let statusCode: number = 200;
+        let response: any;
         try{
             const params = await this.prismaService.api.findUnique({
-                where: {
-                    id: api_id,
-                },
-                select: {
-                    basic_parameters: true,
-                    advanced_parameters: true,
-                }
+                where: {id: api_id,},
+                select: {basic_parameters: true,advanced_parameters: true,}
             });
 
             const basicKeys = (params?.basic_parameters as string[]) || [];
             const advancedKeys = (params?.advanced_parameters as string[]) || [];
-            console.log(basicKeys, advancedKeys);
             const selectedAdvancedKeys = Object.keys(fields).filter(key => advancedKeys.includes(key));
             const requiredFields = [...basicKeys, ...selectedAdvancedKeys];
-            console.log(requiredFields);
             
-
             const isVerified = await this.quotaVerification(userId, api_id);
             if (!isVerified) throw new NotFoundException('Permission denied');
 
-            const must = await this.sharedFunctionsService.queryBuilder(fields);
+            // default api case in case of no fields are selected
+            if (Object.values(fields).length === 0){
+                eventData = await this.defaultCaseData(requiredFields);
+                statusCode = eventData.statusCode || 200;
+            }else{
+                const must = await this.sharedFunctionsService.queryBuilder(fields);
+                // if there is no must query generated then return empty filter data
+                // if (must.length === 0) {
+                //     let emptyFilterData = await this.elasticsearchService.search({
+                //         index: process.env.INDEX_NAME,
+                //         body: {
+                //             _source: requiredFields,
+                //             query: { match_all: {} }
+                //         }
+                //     })
+                //     statusCode = emptyFilterData.statusCode || 200;
+                //     response = {
+                //         count: JSON.stringify(emptyFilterData.body.hits.total, null, 2),
+                //         data: emptyFilterData.body.hits.hits,
+                //     };
+                //     return response;
+                // }
 
-            if (must.length === 0) {
-                let emptyFilterData = await this.elasticsearchService.search({
+                eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {
                         size: 1,
+                        _source: requiredFields,
                         query: {
-                            match_all: {},
+                            bool: { must: [must,] }
                         }
                     }
                 })
-                return { data: emptyFilterData.body.hits.hits };
+                statusCode = eventData.statusCode;
             }
-            
 
-            eventData = await this.elasticsearchService.search({
-                index: process.env.INDEX_NAME,
-                body: {
-                    size: 1,
-                    _source: requiredFields,
-                    query: {
-                        bool: {
-                            must: [
-                                must,
-                            ]
-                        }
-                    }
-                }
-            })
-            statusCode = eventData.statusCode;
+            response = {
+                count: JSON.stringify(eventData?.body?.hits?.total, null, 2),
+                data: eventData?.body?.hits?.hits,
+            }
         }catch(error){
             statusCode = error.status || 500;
             throw error;
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveApiData(userId, api_id,Apis.GET_CATEGORY_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
+            try{
+                await this.sharedFunctionsService.saveApiData(userId, api_id,Apis.GET_CATEGORY_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
+            }catch(error){
+                throw error;
+            }
         }
 
-        return { 
-            count: JSON.stringify(eventData.body.hits.total, null, 2), 
-            data: eventData.body.hits.hits 
-        };
+        return response;
     }
 }
