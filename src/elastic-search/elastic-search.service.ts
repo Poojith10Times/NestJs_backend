@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { EventDataDto } from './dto/event-data.dto';
+import { FilterDataDto, ResponseDataDto, ResponseDataSchema } from './dto/event-data.dto';
 import { SharedFunctionsService } from 'src/utils/shared-functions.service';
 import { Apis } from 'src/Api-Types/api-types';
 
@@ -47,7 +47,7 @@ export class ElasticSearchService {
         return eventData;
     }
 
-    async getAlias(user_id: string, api_id: string, ip_address: string) {
+    async getAlias(user_id: string, api_id: string, ip_address: string, filterFields: FilterDataDto, responseFields: ResponseDataDto) {
         const startTime = Date.now();
         let alias: any;
         let statusCode: number = 200;
@@ -64,14 +64,14 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_ALIAS.endpoint, apiResponseTime, ip_address, statusCode);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_ALIAS.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
         }
 
         return alias;
     }
 
     //  get sorted index data
-    async getIndexData(user_id: string, api_id: string, ip_address: string) {
+    async getIndexData(user_id: string, api_id: string, ip_address: string, filterFields: FilterDataDto, responseFields: ResponseDataDto) {
         const startTime = Date.now();
         let index_data: any;
         let statusCode: number = 200;
@@ -98,12 +98,12 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_INDEX_DATA.endpoint, apiResponseTime, ip_address, statusCode);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_INDEX_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
         }
         return {data: index_data.body.hits.hits};
     }
 
-    async getParams(user_id: string, api_id: string, ip_address: string) {
+    async getParams(user_id: string, api_id: string, ip_address: string, filterFields: FilterDataDto, responseFields: ResponseDataDto) {
         const startTime = Date.now();
         let params: any;
         let statusCode: number = 200;
@@ -120,12 +120,12 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_PARAMS.endpoint, apiResponseTime, ip_address, statusCode);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_PARAMS.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
         }
         return {data: params};
     }
 
-    async getBasicAdvancedData(user_id: string, api_id: string, fields: AdvancedFieldsDto, ip_address: string) {
+    async getBasicAdvancedData(user_id: string, api_id: string, fields: AdvancedFieldsDto, ip_address: string, filterFields: FilterDataDto, responseFields: ResponseDataDto) {
         const startTime = Date.now();
         let basic_advanced_data: any;
         let statusCode: number = 200;
@@ -165,13 +165,13 @@ export class ElasticSearchService {
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_BASIC_ADVANCED_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_BASIC_ADVANCED_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
         }
         return {data: basic_advanced_data.body.hits.hits};
     }
 
     // get event data based on category and date range
-    async getEventData(userId: string, api_id: string, fields: EventDataDto, ip_address: string) {
+    async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, ip_address: string) {
         const startTime = Date.now();
         let eventData: any;
         let statusCode: number = 200;
@@ -184,18 +184,18 @@ export class ElasticSearchService {
 
             const basicKeys = (params?.basic_parameters as string[]) || [];
             const advancedKeys = (params?.advanced_parameters as string[]) || [];
-            const selectedAdvancedKeys = Object.keys(fields).filter(key => advancedKeys.includes(key));
+            const selectedAdvancedKeys = Object.keys(responseFields).filter(key => advancedKeys.includes(key));
             const requiredFields = [...basicKeys, ...selectedAdvancedKeys];
             
             const isVerified = await this.quotaVerification(userId, api_id);
             if (!isVerified) throw new NotFoundException('Permission denied');
 
             // default api case in case of no fields are selected
-            if (Object.values(fields).length === 0){
+            if (Object.values(filterFields).length === 0){
                 eventData = await this.defaultCaseData(requiredFields);
                 statusCode = eventData.statusCode || 200;
             }else{
-                const must = await this.sharedFunctionsService.queryBuilder(fields);
+                const must = await this.sharedFunctionsService.queryBuilder(filterFields);
 
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
@@ -221,7 +221,7 @@ export class ElasticSearchService {
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
             try{
-                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address, statusCode, fields);
+                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
             }catch(error){
                 throw error;
             }

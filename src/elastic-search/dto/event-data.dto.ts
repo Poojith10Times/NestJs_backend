@@ -1,8 +1,7 @@
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
-
-export const EventDataSchema = z.object({
+export const FilterDataSchema = z.object({
     category: z.string().optional(),
     endDate_gte: z.string().date().optional(),
     endDate_lte: z.string().date().optional(),
@@ -32,7 +31,20 @@ export const EventDataSchema = z.object({
     }).optional(),
     entry_type: z.enum(['free','paid','not_available','free-paid'], {
         invalid_type_error: "entry_type must be one of: free, paid, not_available, free-paid"
-    }).optional()
+    }).optional()  
 })
 
-export class EventDataDto extends createZodDto(EventDataSchema) {}
+export class FilterDataDto extends createZodDto(FilterDataSchema) {}
+
+export const ResponseDataSchema= z.object({
+    event_countryName: z.string().optional(),
+    event_created: z.string().optional(),
+    event_exhibitors: z.string().optional(),
+    event_published: z.string().optional(),
+    my_join_field: z.string().optional(),
+    event_venueId: z.string().optional(),
+    event_score: z.string().optional(),
+    
+});
+
+export class ResponseDataDto extends createZodDto(ResponseDataSchema) {}

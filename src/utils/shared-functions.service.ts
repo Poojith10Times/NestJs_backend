@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { EventDataDto } from "src/elastic-search/dto/event-data.dto";
+import { FilterDataDto, ResponseDataDto } from "src/elastic-search/dto/event-data.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class SharedFunctionsService {
     constructor(private readonly prismaService: PrismaService) {}
 
-    async queryBuilder(fields: EventDataDto): Promise<any[]> {
+    async queryBuilder(fields: FilterDataDto): Promise<any[]> {
 
         const must: any[] = [];
 
@@ -44,7 +44,7 @@ export class SharedFunctionsService {
         return must;
     }
 
-    async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, payload: any = {}) {
+    async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, filterFields: FilterDataDto, responseFields: ResponseDataDto) {
         try{
             await this.prismaService.$transaction(async (tx) => {
                 await tx.apiUsageLog.create({
@@ -52,7 +52,10 @@ export class SharedFunctionsService {
                         user_id,
                         api_id,
                         endpoint,
-                        payload,
+                        payload: {
+                            filterFields: filterFields as any,
+                            responseFields: responseFields as any,
+                        },
                         ip_address,
                         status_code: statusCode,
                         api_response_time: apiResponseTime,
