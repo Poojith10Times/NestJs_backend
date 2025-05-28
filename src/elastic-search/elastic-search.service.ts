@@ -233,8 +233,8 @@ export class ElasticSearchService {
             }
 
             response = {
-                count: JSON.stringify(eventData?.body?.hits?.total, null, 2),
-                data: eventData?.body?.hits?.hits,
+                count: eventData?.body?.hits?.total,
+                data: eventData?.body?.hits?.hits.map(hit => hit._source),
             }
         }catch(error){
             statusCode = error.status || 500;
