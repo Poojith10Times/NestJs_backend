@@ -30,7 +30,7 @@ export const Apis: ApiType = {
         endpoint: 'search-event',
         id: 'bc3f92b8-ab8f-4156-a3e5-97efd229492a', 
     },
-    GET_CATEGORY_DATA: {
+    GET_EVENT_DATA: {
         endpoint: 'get-event-data',
         id: '3e9d0e4e-b9c9-4e16-8468-9910075c9b88',
     }
