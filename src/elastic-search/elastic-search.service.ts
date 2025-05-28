@@ -51,6 +51,7 @@ export class ElasticSearchService {
             alias = await this.elasticsearchService.cat.aliases({
                 format: 'json',
             })
+            statusCode = alias.statusCode;
         }catch(error){
             statusCode = error.status || 500;
             throw error;
@@ -84,6 +85,7 @@ export class ElasticSearchService {
                     ]
                 }
             })
+            statusCode = index_data.statusCode;
         }catch(error){
             statusCode = error.status || 500;
             throw error;
@@ -105,6 +107,7 @@ export class ElasticSearchService {
             params = await this.elasticsearchService.indices.getMapping({
                 index : process.env.INDEX_NAME,
             })
+            statusCode = params.statusCode;
         }catch(error){
             statusCode = error.status || 500;
             throw error;
@@ -149,6 +152,7 @@ export class ElasticSearchService {
                     }
                 }
             })
+            statusCode = basic_advanced_data.statusCode;
         }catch(error){
             statusCode = error.status || 500;
             throw error;
@@ -160,41 +164,30 @@ export class ElasticSearchService {
         return {data: basic_advanced_data.body.hits.hits};
     }
 
-    // async searchEvent(user_id: string, api_id: string, event_status?: string) {
-    //     const isVerified = await this.quotaVerification(user_id, api_id);
-    //     if (!isVerified) throw new NotFoundException('Permission denied');
-
-    //     const searchQuery = event_status 
-    //         ? {
-    //             query: {
-    //                 term: {
-    //                     "event_status": event_status
-    //                 }
-    //             }
-    //         }
-    //         : {
-    //             query: {
-    //                 match_all: {}
-    //             }
-    //         };
-
-    //     const search_result = await this.elasticsearchService.search({
-    //         index: process.env.INDEX_NAME,
-    //         body: searchQuery
-    //     });
-
-    //     return { data: search_result.body.hits.hits };
-    // }
-
-
-
-
     // get event data based on category and date range
     async getEventData(userId: string, api_id: string, fields: CategoryDateDto, ip_address: string) {
         const startTime = Date.now();
         let eventData: any;
         let statusCode: number = 200;
         try{
+            const params = await this.prismaService.api.findUnique({
+                where: {
+                    id: api_id,
+                },
+                select: {
+                    basic_parameters: true,
+                    advanced_parameters: true,
+                }
+            });
+
+            const basicKeys = (params?.basic_parameters as string[]) || [];
+            const advancedKeys = (params?.advanced_parameters as string[]) || [];
+            console.log(basicKeys, advancedKeys);
+            const selectedAdvancedKeys = Object.keys(fields).filter(key => advancedKeys.includes(key));
+            const requiredFields = [...basicKeys, ...selectedAdvancedKeys];
+            console.log(requiredFields);
+            
+
             const isVerified = await this.quotaVerification(userId, api_id);
             if (!isVerified) throw new NotFoundException('Permission denied');
 
@@ -217,6 +210,8 @@ export class ElasticSearchService {
             eventData = await this.elasticsearchService.search({
                 index: process.env.INDEX_NAME,
                 body: {
+                    size: 1,
+                    _source: requiredFields,
                     query: {
                         bool: {
                             must: [
@@ -226,6 +221,7 @@ export class ElasticSearchService {
                     }
                 }
             })
+            statusCode = eventData.statusCode;
         }catch(error){
             statusCode = error.status || 500;
             throw error;
