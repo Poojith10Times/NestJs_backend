@@ -220,18 +220,6 @@ export class ElasticSearchService {
         return allowedFilters.map(access => access.filter.filter_name);
     }
 
-    async validateAppliedFilters(user_id: string, api_id: string, filterFields: FilterDataDto) {
-        try {
-            const requestedFilters = Object.keys(filterFields);
-            const allowedFilters = await this.getPermittedFilters(user_id, api_id);
-
-            // const invalidFilters = requestedFilters.filter(filter => !allowedFilters.includes(filter));
-            // if (invalidFilters.length > 0) throw new HttpException(`Invalid filter(s): ${invalidFilters.join(', ')}`, HttpStatus.BAD_REQUEST);
-        }catch(error){
-            throw error;
-        }
-    }
-
     // get event data based on category and date range
     async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, ip_address: string) {
         const startTime = Date.now();
@@ -253,7 +241,10 @@ export class ElasticSearchService {
             if (!isVerified) throw new NotFoundException('Permission denied');
 
             try {
-                await this.getPermittedFilters(userId, api_id);
+                const allowedFilter = await this.getPermittedFilters(userId, api_id);
+                const requestedFilters = Object.keys(filterFields).filter(key => filterFields[key] != undefined);
+                const unauthorizedFilters = requestedFilters.filter(filter => !allowedFilter.includes(filter));
+                if (unauthorizedFilters.length > 0) throw new HttpException(`Invalid filter(s): ${unauthorizedFilters.join(', ')}`, HttpStatus.BAD_REQUEST);
             }catch(error){
                 statusCode = error.status || 500;
                 throw error;
