@@ -5,6 +5,7 @@ import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { FilterDataDto, ResponseDataDto, ResponseDataSchema } from './dto/event-data.dto';
 import { SharedFunctionsService } from 'src/utils/shared-functions.service';
 import { Apis } from 'src/Api-Types/api-types';
+import { FilterType } from '@prisma/client';
 
 @Injectable()
 export class ElasticSearchService {
@@ -48,10 +49,11 @@ export class ElasticSearchService {
         return true;
     }
 
-    async defaultCaseData(requiredFields: string[]) {
+    async defaultCaseData(requiredFields: string[], responseFields: ResponseDataDto) {
         const eventData = await this.elasticsearchService.search({
             index: process.env.INDEX_NAME,
             body: {
+                size: responseFields.limit,
                 _source: requiredFields,
                 query: {
                     bool: {
@@ -187,6 +189,49 @@ export class ElasticSearchService {
         return {data: basic_advanced_data.body.hits.hits};
     }
 
+    async getPermittedFilters(user_id: string, api_id: string) {
+        const userFilterAccess = await this.prismaService.userFilterAccess.findMany({
+            where: {
+                user_id,
+                has_access: true,
+                filter: {
+                    api_id,
+                    is_active: true,
+                }
+            },
+            include: {
+                filter: {
+                    select: {
+                        filter_type: true,
+                        filter_name: true,
+                        is_paid: true,
+                    }
+                }
+            }
+        });
+
+        const allowedFilters = userFilterAccess.filter(access => {
+            const filter = access.filter;
+            if ( filter.filter_type === FilterType.BASIC) return true;
+            if ( filter.filter_type === FilterType.ADVANCED && !filter.is_paid) return true;
+            return false; // if filter is not basic || advanced and paid, then it is not allowed
+        });
+
+        return allowedFilters.map(access => access.filter.filter_name);
+    }
+
+    async validateAppliedFilters(user_id: string, api_id: string, filterFields: FilterDataDto) {
+        try {
+            const requestedFilters = Object.keys(filterFields);
+            const allowedFilters = await this.getPermittedFilters(user_id, api_id);
+
+            // const invalidFilters = requestedFilters.filter(filter => !allowedFilters.includes(filter));
+            // if (invalidFilters.length > 0) throw new HttpException(`Invalid filter(s): ${invalidFilters.join(', ')}`, HttpStatus.BAD_REQUEST);
+        }catch(error){
+            throw error;
+        }
+    }
+
     // get event data based on category and date range
     async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, ip_address: string) {
         const startTime = Date.now();
@@ -207,9 +252,16 @@ export class ElasticSearchService {
             const isVerified = await this.quotaVerification(userId, api_id);
             if (!isVerified) throw new NotFoundException('Permission denied');
 
+            try {
+                await this.getPermittedFilters(userId, api_id);
+            }catch(error){
+                statusCode = error.status || 500;
+                throw error;
+            }
+
             // default api case in case of no fields are selected
             if (Object.values(filterFields).length === 0){
-                eventData = await this.defaultCaseData(requiredFields);
+                eventData = await this.defaultCaseData(requiredFields, responseFields);
                 statusCode = eventData.statusCode || 200;
             }else{
                 const must = await this.sharedFunctionsService.queryBuilder(filterFields);

@@ -25,7 +25,8 @@ model User {
   apiTokens      ApiToken[]
   apiAccesses    UserApiAccess[]
   usageLogs      ApiUsageLog[]
-
+  filterAccesses UserFilterAccess[] // user filter access - to handle which filters are allowed for a user
+  
   // @@index([status]) // TODO: Add index for status
 }
 
@@ -47,6 +48,7 @@ model Api {
 
   userApiAccesses     UserApiAccess[]
   usageLogs           ApiUsageLog[]
+  apiFilters          ApiFilter[]
 
   @@index([is_active])
 }
@@ -99,4 +101,39 @@ model ApiUsageLog {
   @@index([created_at]) //useful to delete old logs
   @@index([user_id, api_id, status_code]) //useful to get/delete old logs based on status code
 
+}
+
+model ApiFilter {
+  id String @id @default(uuid())
+  api_id String
+  filter_type FilterType
+  filter_name String
+  is_paid Boolean @default(false)
+  is_active Boolean @default(true)
+  created_at DateTime @default(now())
+
+  api Api @relation(fields: [api_id], references: [id], onDelete: Cascade)
+  userAccesses UserFilterAccess[]
+  
+  @@unique([api_id, filter_name])
+  @@index([api_id, is_active])
+}
+
+enum FilterType {
+  BASIC
+  ADVANCED
+}
+
+model UserFilterAccess {
+  id String @id @default(uuid())
+  user_id String
+  filter_id String
+  has_access Boolean @default(true)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  filter ApiFilter @relation(fields: [filter_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, filter_id])
+  @@index([user_id, has_access])
 }
