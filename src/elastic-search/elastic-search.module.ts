@@ -4,20 +4,32 @@ import { ElasticSearchController } from './elastic-search.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { UtilsModule } from 'src/utils/utils.module';
+import { CustomElasticsearchService } from './custom-elasticsearch.service';
 
 @Module({
-  providers: [ElasticSearchService],
+  providers: [
+    ElasticSearchService,
+    {
+      provide: CustomElasticsearchService,
+      useFactory: (configService: ConfigService) => {
+        return new CustomElasticsearchService({
+          node: configService.get('ELASTIC_SEARCH_HOST'),
+        });
+      },
+      inject: [ConfigService],
+    }
+  ],
   controllers: [ElasticSearchController],
-  exports: [ElasticSearchService],
+  exports: [ElasticSearchService, CustomElasticsearchService],
   imports: [
     ConfigModule,
-    ElasticsearchModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        node: configService.get('ELASTIC_SEARCH_HOST'),
-      }),
-      inject: [ConfigService],
-    }),
+    // ElasticsearchModule.registerAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: async (configService: ConfigService) => ({
+    //     node: configService.get('ELASTIC_SEARCH_HOST'),
+    //   }),
+    //   inject: [ConfigService],
+    // }),
     UtilsModule,
   ],
 })

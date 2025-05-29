@@ -6,12 +6,14 @@ import { FilterDataDto, ResponseDataDto, ResponseDataSchema } from './dto/event-
 import { SharedFunctionsService } from 'src/utils/shared-functions.service';
 import { Apis } from 'src/Api-Types/api-types';
 import { FilterType } from '@prisma/client';
+import { CustomElasticsearchService } from './custom-elasticsearch.service';
 
 @Injectable()
 export class ElasticSearchService {
     constructor(
         private readonly prismaService: PrismaService, 
-        private readonly elasticsearchService: ElasticsearchService,
+        // private readonly elasticsearchService: ElasticsearchService,
+        private readonly elasticsearchService: CustomElasticsearchService,
         private readonly sharedFunctionsService: SharedFunctionsService
     ) {}
 
