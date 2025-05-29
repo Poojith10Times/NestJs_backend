@@ -189,37 +189,6 @@ export class ElasticSearchService {
         return {data: basic_advanced_data.body.hits.hits};
     }
 
-    async getPermittedFilters(user_id: string, api_id: string) {
-        const userFilterAccess = await this.prismaService.userFilterAccess.findMany({
-            where: {
-                user_id,
-                has_access: true,
-                filter: {
-                    api_id,
-                    is_active: true,
-                }
-            },
-            include: {
-                filter: {
-                    select: {
-                        filter_type: true,
-                        filter_name: true,
-                        is_paid: true,
-                    }
-                }
-            }
-        });
-
-        const allowedFilters = userFilterAccess.filter(access => {
-            const filter = access.filter;
-            if ( filter.filter_type === FilterType.BASIC) return true;
-            if ( filter.filter_type === FilterType.ADVANCED && !filter.is_paid) return true;
-            return false; // if filter is not basic || advanced and paid, then it is not allowed
-        });
-
-        return allowedFilters.map(access => access.filter.filter_name);
-    }
-
     // get event data based on category and date range
     async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, ip_address: string) {
         const startTime = Date.now();
@@ -237,11 +206,8 @@ export class ElasticSearchService {
             const selectedAdvancedKeys = Object.keys(responseFields).filter(key => advancedKeys.includes(key));
             const requiredFields = [...basicKeys, ...selectedAdvancedKeys];
             
-            const isVerified = await this.quotaVerification(userId, api_id);
-            if (!isVerified) throw new NotFoundException('Permission denied');
-
-            try {
-                const allowedFilter = await this.getPermittedFilters(userId, api_id);
+            try{
+                const allowedFilter = await this.sharedFunctionsService.quotaAndFilterVerification(userId, api_id);
                 const requestedFilters = Object.keys(filterFields).filter(key => filterFields[key] != undefined);
                 const unauthorizedFilters = requestedFilters.filter(filter => !allowedFilter.includes(filter));
                 if (unauthorizedFilters.length > 0) throw new HttpException(`Invalid filter(s): ${unauthorizedFilters.join(', ')}`, HttpStatus.BAD_REQUEST);

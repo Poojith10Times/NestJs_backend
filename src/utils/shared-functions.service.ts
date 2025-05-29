@@ -1,10 +1,73 @@
-import { Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
+import { FilterType } from "@prisma/client";
 import { FilterDataDto, ResponseDataDto } from "src/elastic-search/dto/event-data.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class SharedFunctionsService {
     constructor(private readonly prismaService: PrismaService) {}
+
+    async quotaAndFilterVerification(user_id: string, api_id: string) {
+        return await this.prismaService.$transaction(async (tx) => {
+          // Quota verification and decrement
+          const access = await tx.userApiAccess.findUnique({
+            where: {
+              user_id_api_id: { user_id, api_id },
+            },
+            select: {
+              daily_limit: true,
+            },
+          });
+      
+          if (!access) throw new NotFoundException('Permission denied');
+          if (access.daily_limit <= 0) {
+            throw new HttpException('Daily limit reached', HttpStatus.TOO_MANY_REQUESTS);
+          }
+      
+          await tx.userApiAccess.update({
+            where: {
+              user_id_api_id: { user_id, api_id },
+            },
+            data: {
+              daily_limit: {
+                decrement: 1,
+              },
+            },
+          });
+      
+          // get permitted filters
+          const userFilterAccess = await tx.userFilterAccess.findMany({
+            where: {
+              user_id,
+              has_access: true,
+              filter: {
+                api_id,
+                is_active: true,
+              },
+            },
+            include: {
+              filter: {
+                select: {
+                  filter_type: true,
+                  filter_name: true,
+                  is_paid: true,
+                },
+              },
+            },
+          });
+      
+          const allowedFilters = userFilterAccess
+            .filter((access) => {
+              const filter = access.filter;
+              if (filter.filter_type === FilterType.BASIC) return true;
+              if (filter.filter_type === FilterType.ADVANCED && !filter.is_paid) return true;
+              return false;
+            })
+            .map((access) => access.filter.filter_name);
+      
+          return allowedFilters;
+        });
+    }
 
     async queryBuilder(fields: FilterDataDto): Promise<any[]> {
 
