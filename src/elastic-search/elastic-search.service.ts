@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
@@ -15,19 +15,36 @@ export class ElasticSearchService {
     ) {}
 
     async quotaVerification(user_id: string, api_id: string) {
-        const access = await this.prismaService.userApiAccess.findFirst({
+        await this.prismaService.$transaction(async (tx) => {
+            const access = await tx.userApiAccess.findUnique({
                 where: {
-                    user_id,
-                    api_id,
-                    has_access: true,
+                    user_id_api_id: {
+                        user_id,
+                        api_id,
+                    }
                 },
                 select: {
-                    id: true,
                     daily_limit: true,
                 }
-            })
-        if (!access) throw new NotFoundException('Permission denied');
-        if (access.daily_limit === 0) throw new NotFoundException('Daily limit reached');
+            });
+
+            if (!access) throw new NotFoundException('Permission denied');
+            if (access.daily_limit <= 0) throw new HttpException('Daily limit reached', HttpStatus.TOO_MANY_REQUESTS);
+
+            await tx.userApiAccess.update({
+                where: {
+                    user_id_api_id: {
+                        user_id,
+                        api_id,
+                    }
+                },
+                data: {
+                    daily_limit: {
+                        decrement: 1,
+                    }
+                }
+            });
+        })
         return true;
     }
 

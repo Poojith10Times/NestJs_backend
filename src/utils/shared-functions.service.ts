@@ -61,9 +61,11 @@ export class SharedFunctionsService {
                         api_response_time: apiResponseTime,
                     }
                 })
-    
+            })
+        }catch(error: any){
+            await this.prismaService.$transaction(async (tx) => {
                 await tx.userApiAccess.update({
-                    where: {    
+                    where: {
                         user_id_api_id: {
                             user_id,
                             api_id,
@@ -71,13 +73,12 @@ export class SharedFunctionsService {
                     },
                     data: {
                         daily_limit: {
-                            decrement: 1,
+                            increment: 1,
                         }
                     }
                 })
             })
-        }catch(error: any){
-           throw error;
+            throw error;
         }
     }
 }
