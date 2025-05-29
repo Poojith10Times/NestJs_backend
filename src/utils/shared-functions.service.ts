@@ -9,63 +9,55 @@ export class SharedFunctionsService {
 
     async quotaAndFilterVerification(user_id: string, api_id: string) {
         return await this.prismaService.$transaction(async (tx) => {
-          // Quota verification and decrement
-          const access = await tx.userApiAccess.findUnique({
-            where: {
-              user_id_api_id: { user_id, api_id },
-            },
-            select: {
-              daily_limit: true,
-            },
-          });
-      
-          if (!access) throw new NotFoundException('Permission denied');
-          if (access.daily_limit <= 0) {
-            throw new HttpException('Daily limit reached', HttpStatus.TOO_MANY_REQUESTS);
-          }
-      
-          await tx.userApiAccess.update({
-            where: {
-              user_id_api_id: { user_id, api_id },
-            },
-            data: {
-              daily_limit: {
-                decrement: 1,
-              },
-            },
-          });
-      
-          // get permitted filters
-          const userFilterAccess = await tx.userFilterAccess.findMany({
-            where: {
-              user_id,
-              has_access: true,
-              filter: {
-                api_id,
-                is_active: true,
-              },
-            },
-            include: {
-              filter: {
-                select: {
-                  filter_type: true,
-                  filter_name: true,
-                  is_paid: true,
+            // Quota verification and decrement
+            const updated = await tx.userApiAccess.updateMany({
+                where: {
+                    user_id,
+                    api_id,
+                    daily_limit: {
+                        gt: 0,
+                    }
                 },
-              },
-            },
-          });
-      
-          const allowedFilters = userFilterAccess
-            .filter((access) => {
-              const filter = access.filter;
-              if (filter.filter_type === FilterType.BASIC) return true;
-              if (filter.filter_type === FilterType.ADVANCED && !filter.is_paid) return true;
-              return false;
+                data: {
+                    daily_limit: {
+                        decrement: 1,
+                    }
+                }
             })
-            .map((access) => access.filter.filter_name);
+
+            if(updated.count === 0) throw new HttpException('Daily limit reached', HttpStatus.TOO_MANY_REQUESTS);
       
-          return allowedFilters;
+            // get permitted filters
+            const userFilterAccess = await tx.userFilterAccess.findMany({
+                where: {
+                user_id,
+                has_access: true,
+                filter: {
+                    api_id,
+                    is_active: true,
+                },
+                },
+                include: {
+                filter: {
+                    select: {
+                    filter_type: true,
+                    filter_name: true,
+                    is_paid: true,
+                    },
+                },
+                },
+            });
+        
+            const allowedFilters = userFilterAccess
+                .filter((access) => {
+                const filter = access.filter;
+                if (filter.filter_type === FilterType.BASIC) return true;
+                if (filter.filter_type === FilterType.ADVANCED && !filter.is_paid) return true;
+                return false;
+                })
+                .map((access) => access.filter.filter_name);
+        
+            return allowedFilters;
         });
     }
 
