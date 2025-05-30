@@ -10,7 +10,6 @@ export class ElasticSearchController {
     constructor(private readonly elasticSearchService: ElasticSearchService) {}
 
     @Get(Apis.GET_ALIAS.endpoint)
-    @UseGuards(JwtAuthGuard)
     async getAlias(@Query() filterFields: FilterDataDto, @Query() responseFields: ResponseDataDto, @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_ALIAS.id;
@@ -21,7 +20,6 @@ export class ElasticSearchController {
     }
 
     @Get(Apis.GET_INDEX_DATA.endpoint)
-    @UseGuards(JwtAuthGuard)
     async getIndexData(@Query() filterFields: FilterDataDto, @Query() responseFields: ResponseDataDto, @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_INDEX_DATA.id;
@@ -29,7 +27,6 @@ export class ElasticSearchController {
     }
 
     @Get(Apis.GET_PARAMS.endpoint)
-    @UseGuards(JwtAuthGuard)
     async getParams(@Query() filterFields: FilterDataDto, @Query() responseFields: ResponseDataDto, @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_PARAMS.id;
@@ -37,7 +34,6 @@ export class ElasticSearchController {
     }
 
     @Get(Apis.GET_BASIC_ADVANCED_DATA.endpoint)
-    @UseGuards(JwtAuthGuard)
     async getBasicAdvancedData(@Query() fields: AdvancedFieldsDto, @Query() filterFields: FilterDataDto, @Query() responseFields: ResponseDataDto, @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_BASIC_ADVANCED_DATA.id;
@@ -53,7 +49,6 @@ export class ElasticSearchController {
     // }
 
     @Get(Apis.GET_EVENT_DATA.endpoint)
-    @UseGuards(JwtAuthGuard)
     async getEventData(
         @Query() filterFields: FilterDataDto,
         @Query() responseFields: ResponseDataDto,
