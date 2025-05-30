@@ -30,7 +30,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       storage: new ThrottlerStorageRedisService(),
       getTracker: (req: Record<string, any>, context: ExecutionContext) => {
         const user = context.switchToHttp().getRequest().user;
-        return user?.id;
+        if (user) return user?.id;
+        return req.ip;
       }
     }),
     PrismaModule,
