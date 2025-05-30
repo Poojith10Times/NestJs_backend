@@ -99,7 +99,7 @@ export class SharedFunctionsService {
         return must;
     }
 
-    async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, filterFields: FilterDataDto, responseFields: ResponseDataDto) {
+    async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, filterFields: FilterDataDto, responseFields: ResponseDataDto, errorMessage: any) {
         try{
             await this.prismaService.$transaction(async (tx) => {
                 await tx.apiUsageLog.create({
@@ -107,6 +107,7 @@ export class SharedFunctionsService {
                         user_id,
                         api_id,
                         endpoint,
+                        error_message: errorMessage,
                         payload: {
                             filterFields: filterFields as any,
                             responseFields: responseFields as any,

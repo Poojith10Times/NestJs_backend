@@ -1,11 +1,9 @@
 import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { FilterDataDto, ResponseDataDto, ResponseDataSchema } from './dto/event-data.dto';
 import { SharedFunctionsService } from 'src/utils/shared-functions.service';
 import { Apis } from 'src/Api-Types/api-types';
-import { FilterType } from '@prisma/client';
 import { CustomElasticsearchService } from './custom-elasticsearch.service';
 
 @Injectable()
@@ -72,6 +70,7 @@ export class ElasticSearchService {
         const startTime = Date.now();
         let alias: any;
         let statusCode: number = 200;
+        let errorMessage: any = null;
         try{
             const isVerified = await this.quotaVerification(user_id, api_id);
             if (!isVerified) throw new NotFoundException('Permission denied');
@@ -81,11 +80,12 @@ export class ElasticSearchService {
             statusCode = alias.statusCode;
         }catch(error){
             statusCode = error.status || 500;
+            errorMessage = error.message;
             throw error;
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_ALIAS.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_ALIAS.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields, errorMessage);
         }
 
         return alias;
@@ -96,6 +96,7 @@ export class ElasticSearchService {
         const startTime = Date.now();
         let index_data: any;
         let statusCode: number = 200;
+        let errorMessage: any = null;
         const isVerified = await this.quotaVerification(user_id, api_id);
         console.log(process.env.INDEX_NAME);
         try{
@@ -115,11 +116,12 @@ export class ElasticSearchService {
             statusCode = index_data.statusCode;
         }catch(error){
             statusCode = error.status || 500;
+            errorMessage = error.message;
             throw error;
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_INDEX_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_INDEX_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields, errorMessage);
         }
         return {data: index_data.body.hits.hits};
     }
@@ -128,6 +130,7 @@ export class ElasticSearchService {
         const startTime = Date.now();
         let params: any;
         let statusCode: number = 200;
+        let errorMessage: any = null;
         try{
             const isVerified = await this.quotaVerification(user_id, api_id);
             if (!isVerified) throw new NotFoundException('Permission denied');
@@ -137,11 +140,12 @@ export class ElasticSearchService {
             statusCode = params.statusCode;
         }catch(error){
             statusCode = error.status || 500;
+            errorMessage = error.message;
             throw error;
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_PARAMS.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_PARAMS.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields, errorMessage);
         }
         return {data: params};
     }
@@ -150,6 +154,7 @@ export class ElasticSearchService {
         const startTime = Date.now();
         let basic_advanced_data: any;
         let statusCode: number = 200;
+        let errorMessage: any = null;
         try{
             const isVerified = await this.quotaVerification(user_id, api_id);
             if (!isVerified) throw new NotFoundException('Permission denied');
@@ -182,11 +187,12 @@ export class ElasticSearchService {
             statusCode = basic_advanced_data.statusCode;
         }catch(error){
             statusCode = error.status || 500;
+            errorMessage = error.message;
             throw error;
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
-            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_BASIC_ADVANCED_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
+            await this.sharedFunctionsService.saveAndUpdateApiData(user_id, api_id,Apis.GET_BASIC_ADVANCED_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields, errorMessage);
         }
         return {data: basic_advanced_data.body.hits.hits};
     }
@@ -197,6 +203,7 @@ export class ElasticSearchService {
         let eventData: any;
         let statusCode: number = 200;
         let response: any;
+        let errorMessage: any = null;
         try{
             const params = await this.prismaService.api.findUnique({
                 where: {id: api_id,},
@@ -215,6 +222,7 @@ export class ElasticSearchService {
                 if (unauthorizedFilters.length > 0) throw new HttpException(`Invalid filter(s): ${unauthorizedFilters.join(', ')}`, HttpStatus.BAD_REQUEST);
             }catch(error){
                 statusCode = error.status || 500;
+                errorMessage = error.message;
                 throw error;
             }
 
@@ -244,12 +252,13 @@ export class ElasticSearchService {
             }
         }catch(error){
             statusCode = error.status || 500;
+            errorMessage = error.message;
             throw error;
         }finally{
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
             try{
-                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields);
+                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields, errorMessage);
             }catch(error){
                 throw error;
             }
