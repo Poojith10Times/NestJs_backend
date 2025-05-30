@@ -49,6 +49,7 @@ export class ElasticSearchController {
     // }
 
     @Get(Apis.GET_EVENT_DATA.endpoint)
+    @UseGuards(JwtAuthGuard)
     async getEventData(
         @Query() filterFields: FilterDataDto,
         @Query() responseFields: ResponseDataDto,

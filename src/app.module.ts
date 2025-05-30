@@ -46,10 +46,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
     },
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAuthGuard
+    // },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
