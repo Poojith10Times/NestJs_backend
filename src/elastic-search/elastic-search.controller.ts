@@ -4,7 +4,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Apis } from 'src/Api-Types/api-types';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { FilterDataDto, ResponseDataDto } from './dto/event-data.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { CustomThrottlerGuard } from 'src/custom-throttler.guard';
 
 @Controller('elastic-search')
 export class ElasticSearchController {
@@ -50,7 +50,7 @@ export class ElasticSearchController {
     // }
 
     @Get(Apis.GET_EVENT_DATA.endpoint)
-    @UseGuards(JwtAuthGuard, ThrottlerGuard)
+    @UseGuards(JwtAuthGuard, CustomThrottlerGuard)
     async getEventData(
         @Query() filterFields: FilterDataDto,
         @Query() responseFields: ResponseDataDto,
