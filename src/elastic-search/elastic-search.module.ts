@@ -4,6 +4,8 @@ import { ElasticSearchController } from './elastic-search.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UtilsModule } from 'src/utils/utils.module';
 import { CustomElasticsearchService } from './custom-elasticsearch.service';
+import { AuthModule } from 'src/auth/auth.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   providers: [
@@ -30,6 +32,8 @@ import { CustomElasticsearchService } from './custom-elasticsearch.service';
     //   inject: [ConfigService],
     // }),
     UtilsModule,
+    AuthModule,
+    ThrottlerModule,
   ],
 })
 
