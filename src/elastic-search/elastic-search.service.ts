@@ -53,7 +53,7 @@ export class ElasticSearchService {
         const eventData = await this.elasticsearchService.search({
             index: process.env.INDEX_NAME,
             body: {
-                size: responseFields.limit,
+                size: responseFields.event_limit,
                 _source: requiredFields,
                 query: {
                     bool: {
@@ -235,7 +235,7 @@ export class ElasticSearchService {
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {
-                        size: responseFields.limit,
+                        size: responseFields.event_limit,
                         _source: requiredFields,
                         query: {
                             bool: { must: [must,], must_not: [{ match: { "event_status": "U" } }] }

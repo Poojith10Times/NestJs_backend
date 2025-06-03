@@ -36,7 +36,7 @@ export const FilterDataSchema = z.object({
 export class FilterDataDto extends createZodDto(FilterDataSchema) {}
 
 export const ResponseDataSchema= z.object({
-    limit: z.string().optional().default("20")
+    event_limit: z.string().optional().default("20")
     .refine((val) => {
         if (Number(val) > 20) {
             return false;
