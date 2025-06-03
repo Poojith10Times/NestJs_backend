@@ -7,7 +7,8 @@ import { FilterDataDto, ResponseDataDto } from './dto/event-data.dto';
 import { CustomThrottlerGuard } from 'src/custom-throttler.guard';
 import { PaginationDto } from './dto/pagination.dto';
 
-@Controller('elastic-search')
+// @Controller('elastic-search')
+@Controller('search')
 export class ElasticSearchController {
     constructor(private readonly elasticSearchService: ElasticSearchService) {}
 

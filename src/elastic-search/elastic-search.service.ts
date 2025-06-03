@@ -238,8 +238,8 @@ export class ElasticSearchService {
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {
-                        size: pagination.limit,
-                        from: pagination.offset,
+                        size: pagination?.limit,
+                        from: pagination?.offset,
                         sort: [ {"_id": { "order": "asc" }} ],
                         _source: requiredFields,
                         query: {
