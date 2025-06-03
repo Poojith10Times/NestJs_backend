@@ -13,8 +13,7 @@ export const PaginationSchema = z.object({
         }),
     offset: z.string()
         .min(0, "Offset must be non-negative")
-        .default("0")
-        .optional(),
+        .default("0"),
 });
 
 export class PaginationDto extends createZodDto(PaginationSchema) {}
