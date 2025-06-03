@@ -232,14 +232,14 @@ export class ElasticSearchService {
                 statusCode = eventData.statusCode || 200;
             }else{
                 const must = await this.sharedFunctionsService.queryBuilder(filterFields);
-
+                must.push({ match: { "event_published": "1" } });
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {
                         size: responseFields.limit,
                         _source: requiredFields,
                         query: {
-                            bool: { must: [must,] }
+                            bool: { must: [must,], must_not: [{ match: { "event_status": "U" } }] }
                         }
                     }
                 })

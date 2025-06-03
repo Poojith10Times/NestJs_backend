@@ -82,7 +82,7 @@ export class SharedFunctionsService {
         }
 
         addMatch('event_categoryName', fields.category);
-        addMatch('event_id', fields.event_id);
+        // addMatch('event_id', fields.event_id);
         addMatch('event_status', fields.event_status);
         addMatch('event_type', fields.event_type);
         addMatch('user_designationName', fields.designation);
