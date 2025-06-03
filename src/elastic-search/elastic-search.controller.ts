@@ -5,6 +5,7 @@ import { Apis } from 'src/Api-Types/api-types';
 import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { FilterDataDto, ResponseDataDto } from './dto/event-data.dto';
 import { CustomThrottlerGuard } from 'src/custom-throttler.guard';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Controller('elastic-search')
 export class ElasticSearchController {
@@ -54,9 +55,10 @@ export class ElasticSearchController {
     async getEventData(
         @Query() filterFields: FilterDataDto,
         @Query() responseFields: ResponseDataDto,
+        @Query() pagination: PaginationDto,
         @Req() req) {
         const user_id = req.user.id;
         const api_id = Apis.GET_EVENT_DATA.id;
-        return await this.elasticSearchService.getEventData(user_id, api_id, filterFields, responseFields, req.ip);
+        return await this.elasticSearchService.getEventData(user_id, api_id, filterFields, responseFields, pagination, req.ip);
     }
 }

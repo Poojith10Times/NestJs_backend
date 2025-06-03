@@ -5,6 +5,7 @@ import { FilterDataDto, ResponseDataDto, ResponseDataSchema } from './dto/event-
 import { SharedFunctionsService } from 'src/utils/shared-functions.service';
 import { Apis } from 'src/Api-Types/api-types';
 import { CustomElasticsearchService } from './custom-elasticsearch.service';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Injectable()
 export class ElasticSearchService {
@@ -49,11 +50,12 @@ export class ElasticSearchService {
         return true;
     }
 
-    async defaultCaseData(requiredFields: string[], responseFields: ResponseDataDto) {
+    async defaultCaseData(requiredFields: string[], responseFields: ResponseDataDto, pagination: PaginationDto) {
         const eventData = await this.elasticsearchService.search({
             index: process.env.INDEX_NAME,
             body: {
-                size: responseFields.event_limit,
+                size: pagination.limit,
+                from: pagination.offset,
                 _source: requiredFields,
                 query: {
                     bool: {
@@ -198,7 +200,7 @@ export class ElasticSearchService {
     }
 
     // get event data based on category and date range
-    async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, ip_address: string) {
+    async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, pagination: PaginationDto, ip_address: string) {
         const startTime = Date.now();
         let eventData: any;
         let statusCode: number = 200;
@@ -228,14 +230,15 @@ export class ElasticSearchService {
 
             // default api case in case of no fields are selected
             if (Object.values(filterFields).length === 0){
-                eventData = await this.defaultCaseData(requiredFields, responseFields);
+                eventData = await this.defaultCaseData(requiredFields, responseFields, pagination);
                 statusCode = eventData.statusCode || 200;
             }else{
                 const must = await this.sharedFunctionsService.queryBuilder(filterFields);
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {
-                        size: responseFields.event_limit,
+                        size: pagination.limit,
+                        from: pagination.offset,
                         _source: requiredFields,
                         query: {
                             bool: { must: [must,], must_not: [{ match: { "event_status": "U" } }] }
