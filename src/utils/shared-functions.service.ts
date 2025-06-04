@@ -95,19 +95,33 @@ export class SharedFunctionsService {
         addMatchOrTerms('event_cityName', fields.event_cityName);
         addMatchOrTerms('event_countryName', fields.event_countryName);
         addMatchOrTerms('event_pricing', fields.event_pricing);
-        addMatchOrTerms('user_designationName', fields.user_designationName);
         addMatchOrTerms('event_type', fields.event_type);
         addMatchOrTerms('event_cityState', fields.event_cityState);
+        addMatchOrTerms('event_tagName', fields.event_tagName);
 
         addRange('event_startDate', fields.startDate_gte, fields.startDate_lte);
         addRange('event_endDate', fields.endDate_gte, fields.endDate_lte);
         addRange('event_avgRating', fields.event_avgRating, undefined);
         addRange('event_following', fields.event_following_gte, fields.event_following_lte);
-        // addRange('event_created', fields.createdAt_gte, fields.createdAt_lte);
-        // addRange('event_impactScore', fields.impactScore_gte, fields.impactScore_lte);
-        // addRange('event_inboundScore', fields.inboundScore_gte, fields.inboundScore_lte);
-        // addRange('event_internationalScore', fields.internationalScore_gte, fields.internationalScore_lte);
-        // addRange('event_editionsCount', fields.editions_gte, fields.editions_lte);
+
+        if (fields.user_designationName && fields.user_designationName.length > 0) {
+            must.push({
+                has_child: {
+                    type: "user",
+                    query: {
+                        bool: {
+                            must: [
+                                {
+                                    terms: {
+                                        "user_designationName.keyword": fields.user_designationName
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            })
+        }
 
         must.push({ match: { "event_published": "1" } });
         return must;

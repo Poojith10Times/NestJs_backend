@@ -245,7 +245,7 @@ export class ElasticSearchService {
                         sort: [ {"_id": { "order": "asc" }} ],
                         _source: requiredFields,
                         query: {
-                            bool: { must: [must,], must_not: [{ match: { "event_status": "U" } }] }
+                            bool: { must: [...must,], must_not: [{ match: { "event_status": "U" } }] }
                         }
                     }
                 })

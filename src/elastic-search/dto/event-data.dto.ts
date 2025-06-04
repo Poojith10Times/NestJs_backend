@@ -25,6 +25,8 @@ export const FilterDataSchema = z.object({
         return val;
     }, z.array(z.string())).optional(),
 
+    event_tagName: z.string().optional(),
+
     event_pricing: z.enum(['free','paid','not_available','free-paid'], {
         invalid_type_error: "event_pricing must be one of: free, paid, not_available, free-paid"
     }).optional(),
@@ -33,7 +35,12 @@ export const FilterDataSchema = z.object({
     }).optional(),
     event_following_gte: z.string().optional(),
     event_following_lte: z.string().optional(),
-    user_designationName: z.string().optional(),
+    user_designationName: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((designation) => designation.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
     endDate_gte: z.string().date().optional(),
     endDate_lte: z.string().date().optional(),
     startDate_gte: z.string().date().optional(),
