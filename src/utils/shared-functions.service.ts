@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable, NotFoundException } from "@nestj
 import { FilterType } from "@prisma/client";
 import { FilterDataDto, ResponseDataDto } from "src/elastic-search/dto/event-data.dto";
 import { PrismaService } from "src/prisma/prisma.service";
+import { Request } from "express";
 
 @Injectable()
 export class SharedFunctionsService {
@@ -135,5 +136,14 @@ export class SharedFunctionsService {
             })
             throw error;
         }
+    }
+
+    async getPaginationURL(limit: string, offset: string, type: 'next' | 'previous', req: Request){
+        const baseUrl = `${req.protocol}://${req.get('host')}${req.path}`;
+        const limitNum = parseInt(limit);
+        const offsetNum = parseInt(offset);
+        let newOffset = type === 'next' ? offsetNum + limitNum : offsetNum - limitNum;
+        if(newOffset < 0) return null;
+        return `${baseUrl}?limit=${limitNum}&offset=${newOffset}`;
     }
 }
