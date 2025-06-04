@@ -6,6 +6,7 @@ import { SharedFunctionsService } from 'src/utils/shared-functions.service';
 import { Apis } from 'src/Api-Types/api-types';
 import { CustomElasticsearchService } from './custom-elasticsearch.service';
 import { PaginationDto } from './dto/pagination.dto';
+import { Request } from 'express';
 
 @Injectable()
 export class ElasticSearchService {
@@ -201,12 +202,13 @@ export class ElasticSearchService {
     }
 
     // get event data based on category and date range
-    async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, pagination: PaginationDto, ip_address: string) {
+    async getEventData(userId: string, api_id: string, filterFields: FilterDataDto, responseFields: ResponseDataDto, pagination: PaginationDto, req: Request) {
         const startTime = Date.now();
         let eventData: any;
         let statusCode: number = 200;
         let response: any;
         let errorMessage: any = null;
+        const ip_address = req.ip;
         try{
             const params = await this.prismaService.api.findUnique({
                 where: {id: api_id,},
@@ -252,6 +254,8 @@ export class ElasticSearchService {
 
             response = {
                 count: eventData?.body?.hits?.hits.length,
+                next: await this.sharedFunctionsService.getPaginationURL(pagination?.limit, pagination?.offset, 'next', req),
+                previous: await this.sharedFunctionsService.getPaginationURL(pagination?.limit, pagination?.offset, 'previous', req),
                 data: eventData?.body?.hits?.hits.map(hit => hit._source),
             }
         }catch(error){
@@ -262,7 +266,7 @@ export class ElasticSearchService {
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
             try{
-                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address, statusCode, filterFields, responseFields, errorMessage);
+                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address || '', statusCode, filterFields, responseFields, errorMessage);
             }catch(error){
                 throw error;
             }
