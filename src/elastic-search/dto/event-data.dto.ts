@@ -2,35 +2,41 @@ import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
 export const FilterDataSchema = z.object({
-    category: z.string().optional(),
+    event_categoryName: z.string().optional(),
+
+    event_cityName: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((city) => city.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
+
+    event_countryName: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((country) => country.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
+
+    event_pricing: z.enum(['free','paid','not_available','free-paid'], {
+        invalid_type_error: "event_pricing must be one of: free, paid, not_available, free-paid"
+    }).optional(),
+    event_avgRating: z.enum(['1', '2', '3', '4', '5'], {
+        invalid_type_error: "event_avgRating must be one of: 1, 2, 3, 4, 5"
+    }).optional(),
+    event_following_gte: z.string().optional(),
+    event_following_lte: z.string().optional(),
+    user_designationName: z.string().optional(),
     endDate_gte: z.string().date().optional(),
     endDate_lte: z.string().date().optional(),
     startDate_gte: z.string().date().optional(),
     startDate_lte: z.string().date().optional(),
-    createdAt_gte: z.string().date().optional(),
-    createdAt_lte: z.string().date().optional(),
-    impactScore_gte: z.coerce.number().optional(),
-    impactScore_lte: z.coerce.number().optional(),
-    inboundScore_gte: z.coerce.number().optional(),
-    inboundScore_lte: z.coerce.number().optional(),
-    internationalScore_gte: z.coerce.number().optional(),
-    internationalScore_lte: z.coerce.number().optional(),
-    editions_gte: z.coerce.number().optional(),
-    editions_lte: z.coerce.number().optional(),
-
-    designation: z.string().optional(),
-    event_status: z.enum(['A', 'C', 'P', 'U', 'o', 'r'], {
-        invalid_type_error: "event_status must be one of: A, C, P, U, o, r"
-    }).optional(),
     event_type: z.enum(['Tradeshow','Conference','Business Floor','Workshop','meetx','Festival','Sport'], {
         invalid_type_error: "event_type must be one of: Tradeshow, Conference, Business Floor, Workshop, meetx, Festival, Sport"
     }).optional(),
-    event_frequency: z.enum(['Annual','One-time','Biennial','Bi-annual','Monthly','Weekly','Quarterly',' null','Triennial',' One-time','Half- Yearly',' default','Quinquennial'], {
-        invalid_type_error: "event_frequency must be one of: Annual, One-time, Biennial, Bi-annual, Monthly, Weekly, Quarterly, null, Triennial, One-time, Half-Yearly, default, Quinquennial"
-    }).optional(),
-    entry_type: z.enum(['free','paid','not_available','free-paid'], {
-        invalid_type_error: "entry_type must be one of: free, paid, not_available, free-paid"
-    }).optional()  
+    // event_frequency: z.enum(['Annual','One-time','Biennial','Bi-annual','Monthly','Weekly','Quarterly',' null','Triennial',' One-time','Half- Yearly',' default','Quinquennial'], {
+    //     invalid_type_error: "event_frequency must be one of: Annual, One-time, Biennial, Bi-annual, Monthly, Weekly, Quarterly, null, Triennial, One-time, Half-Yearly, default, Quinquennial"
+    // }).optional(),
 })
 
 export class FilterDataDto extends createZodDto(FilterDataSchema) {}

@@ -66,9 +66,19 @@ export class SharedFunctionsService {
 
         const must: any[] = [];
 
-        const addMatch = (field: string, value?: string) => {
+        // const addMatch = (field: string, value?: string) => {
+        //     if(value != undefined){
+        //         must.push({ match: { [field]: value } });
+        //     }
+        // }
+
+        const addMatchOrTerms = (field: string, value?: string | string[]) => {
             if(value != undefined){
-                must.push({ match: { [field]: value } });
+                if(Array.isArray(value)){
+                    must.push({ terms: { [field]: value } });
+                }else{
+                    must.push({ match: { [field]: value } });
+                }
             }
         }
 
@@ -81,19 +91,22 @@ export class SharedFunctionsService {
             }
         }
 
-        addMatch('event_categoryName', fields.category);
-        addMatch('event_status', fields.event_status);
-        addMatch('event_type', fields.event_type);
-        addMatch('user_designationName', fields.designation);
-        addMatch('event_frequency', fields.event_frequency);
+        addMatchOrTerms('event_categoryName', fields.event_categoryName);
+        addMatchOrTerms('event_cityName', fields.event_cityName);
+        addMatchOrTerms('event_countryName', fields.event_countryName);
+        addMatchOrTerms('event_pricing', fields.event_pricing);
+        addMatchOrTerms('user_designationName', fields.user_designationName);
+        addMatchOrTerms('event_type', fields.event_type);
 
         addRange('event_startDate', fields.startDate_gte, fields.startDate_lte);
         addRange('event_endDate', fields.endDate_gte, fields.endDate_lte);
-        addRange('event_created', fields.createdAt_gte, fields.createdAt_lte);
-        addRange('event_impactScore', fields.impactScore_gte, fields.impactScore_lte);
-        addRange('event_inboundScore', fields.inboundScore_gte, fields.inboundScore_lte);
-        addRange('event_internationalScore', fields.internationalScore_gte, fields.internationalScore_lte);
-        addRange('event_editionsCount', fields.editions_gte, fields.editions_lte);
+        addRange('event_avgRating', fields.event_avgRating, undefined);
+        addRange('event_following', fields.event_following_gte, fields.event_following_lte);
+        // addRange('event_created', fields.createdAt_gte, fields.createdAt_lte);
+        // addRange('event_impactScore', fields.impactScore_gte, fields.impactScore_lte);
+        // addRange('event_inboundScore', fields.inboundScore_gte, fields.inboundScore_lte);
+        // addRange('event_internationalScore', fields.internationalScore_gte, fields.internationalScore_lte);
+        // addRange('event_editionsCount', fields.editions_gte, fields.editions_lte);
 
         must.push({ match: { "event_published": "1" } });
         return must;
