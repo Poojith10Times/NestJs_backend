@@ -97,6 +97,7 @@ export class SharedFunctionsService {
         addMatchOrTerms('event_pricing', fields.event_pricing);
         addMatchOrTerms('user_designationName', fields.user_designationName);
         addMatchOrTerms('event_type', fields.event_type);
+        addMatchOrTerms('event_cityState', fields.event_cityState);
 
         addRange('event_startDate', fields.startDate_gte, fields.startDate_lte);
         addRange('event_endDate', fields.endDate_gte, fields.endDate_lte);

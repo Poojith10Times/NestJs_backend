@@ -11,6 +11,13 @@ export const FilterDataSchema = z.object({
         return val;
     }, z.array(z.string())).optional(),
 
+    event_cityState: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((city) => city.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
+
     event_countryName: z.preprocess((val) => {
         if (typeof val === 'string') {
             return val.split(',').map((country) => country.trim());
