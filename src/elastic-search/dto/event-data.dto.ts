@@ -50,9 +50,16 @@ export const FilterDataSchema = z.object({
     endDate_lte: z.string().date().optional(),
     startDate_gte: z.string().date().optional(),
     startDate_lte: z.string().date().optional(),
-    event_type: z.enum(['Tradeshow','Conference','Business Floor','Workshop','meetx','Festival','Sport'], {
-        invalid_type_error: "event_type must be one of: Tradeshow, Conference, Business Floor, Workshop, meetx, Festival, Sport"
-    }).optional(),
+    // event_type: z.enum(['Tradeshow','Conference','Business Floor','Workshop','meetx','Festival','Sport', 'Community', 'Specialty Shows'], {
+    //     invalid_type_error: "event_type must be one of: Tradeshow, Conference, Business Floor, Workshop, meetx, Festival, Sport, Community, Specialty Shows"
+    // }).optional(),
+
+    event_type: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((type) => type.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
 })
 
 export class FilterDataDto extends createZodDto(FilterDataSchema) {}

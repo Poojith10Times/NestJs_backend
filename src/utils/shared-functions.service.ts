@@ -66,10 +66,30 @@ export class SharedFunctionsService {
 
         const must: any[] = [];
 
+        // const addMatchOrTerms = (field: string, value?: string | string[]) => {
+        //     if(value != undefined){
+        //         if(Array.isArray(value)){
+        //             must.push({ terms: { [field]: value } });
+        //         }else{
+        //             must.push({ match: { [field]: value } });
+        //         }
+        //     }
+        // }
+
         const addMatchOrTerms = (field: string, value?: string | string[]) => {
             if(value != undefined){
                 if(Array.isArray(value)){
-                    must.push({ terms: { [field]: value } });
+                    must.push({
+                        bool: {
+                            should: value.map(val => ({
+                                match_phrase: {
+                                    [field]: {
+                                        query: val,
+                                    }
+                                }
+                            }))
+                        }
+                    })
                 }else{
                     must.push({ match: { [field]: value } });
                 }
@@ -91,7 +111,7 @@ export class SharedFunctionsService {
         addMatchOrTerms('event_pricing', fields.event_pricing);
         addMatchOrTerms('event_type', fields.event_type);
         addMatchOrTerms('event_cityState', fields.event_cityState);
-        addMatchOrTerms('event_tagName.keyword', fields.event_tagName);
+        addMatchOrTerms('event_tagName', fields.event_tagName);
 
         addRange('event_startDate', fields.startDate_gte, fields.startDate_lte);
         addRange('event_endDate', fields.endDate_gte, fields.endDate_lte);
@@ -107,7 +127,7 @@ export class SharedFunctionsService {
                             must: [
                                 {
                                     terms: {
-                                        "user_designationName.keyword": fields.user_designationName
+                                        "user_designationName": fields.user_designationName
                                     }
                                 }
                             ]
