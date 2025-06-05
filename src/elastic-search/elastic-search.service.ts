@@ -256,7 +256,7 @@ export class ElasticSearchService {
                 count: eventData?.body?.hits?.hits.length,
                 next: await this.sharedFunctionsService.getPaginationURL(pagination?.limit, pagination?.offset, 'next', req),
                 previous: await this.sharedFunctionsService.getPaginationURL(pagination?.limit, pagination?.offset, 'previous', req),
-                data: eventData?.body?.hits?.hits.map(hit => hit._source),
+                results: eventData?.body?.hits?.hits.map(hit => hit._source),
             }
         }catch(error){
             statusCode = error.status || 500;

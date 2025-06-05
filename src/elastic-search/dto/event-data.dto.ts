@@ -25,7 +25,12 @@ export const FilterDataSchema = z.object({
         return val;
     }, z.array(z.string())).optional(),
 
-    event_tagName: z.string().optional(),
+    event_tagName: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split('|:').map((tag) => tag.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
 
     event_pricing: z.enum(['free','paid','not_available','free-paid'], {
         invalid_type_error: "event_pricing must be one of: free, paid, not_available, free-paid"
@@ -48,9 +53,6 @@ export const FilterDataSchema = z.object({
     event_type: z.enum(['Tradeshow','Conference','Business Floor','Workshop','meetx','Festival','Sport'], {
         invalid_type_error: "event_type must be one of: Tradeshow, Conference, Business Floor, Workshop, meetx, Festival, Sport"
     }).optional(),
-    // event_frequency: z.enum(['Annual','One-time','Biennial','Bi-annual','Monthly','Weekly','Quarterly',' null','Triennial',' One-time','Half- Yearly',' default','Quinquennial'], {
-    //     invalid_type_error: "event_frequency must be one of: Annual, One-time, Biennial, Bi-annual, Monthly, Weekly, Quarterly, null, Triennial, One-time, Half-Yearly, default, Quinquennial"
-    // }).optional(),
 })
 
 export class FilterDataDto extends createZodDto(FilterDataSchema) {}
