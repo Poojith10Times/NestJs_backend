@@ -58,7 +58,6 @@ export const FilterDataSchema = z.object({
 export class FilterDataDto extends createZodDto(FilterDataSchema) {}
 
 export const ResponseDataSchema= z.object({
-    event_countryName: z.string().optional(),
     event_created: z.string().optional(),
     event_exhibitors: z.string().optional(),
     event_published: z.string().optional(),
