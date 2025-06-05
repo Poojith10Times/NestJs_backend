@@ -11,9 +11,13 @@ export const PaginationSchema = z.object({
         }, {
             message: "Limit must be less than or equal to 20"
         }),
-    offset: z.string()
-        .min(0, "Offset must be non-negative")
-        .default("0"),
+        offset: z
+        .string()
+        .default("0")
+        .transform((val) => Number(val))
+        .refine((val) => val >= 0, {
+            message: "Offset must be non-negative",
+        }),
 });
 
 export class PaginationDto extends createZodDto(PaginationSchema) {}
