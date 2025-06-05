@@ -6,6 +6,7 @@ import { AdvancedFieldsDto } from './dto/advanced-fields.dto';
 import { FilterDataDto, ResponseDataDto } from './dto/event-data.dto';
 import { CustomThrottlerGuard } from 'src/custom-throttler.guard';
 import { PaginationDto } from './dto/pagination.dto';
+import { GetEventDataOptions } from './elastic-search.options';
 
 @Controller('search')
 export class ElasticSearchController {
@@ -52,6 +53,7 @@ export class ElasticSearchController {
 
     @Get(Apis.GET_EVENT_DATA.endpoint)
     @UseGuards(JwtAuthGuard, CustomThrottlerGuard)
+    @GetEventDataOptions()
     async getEventData(
         @Query() filterFields: FilterDataDto,
         @Query() responseFields: ResponseDataDto,
