@@ -8,7 +8,7 @@ import { CustomThrottlerGuard } from 'src/custom-throttler.guard';
 import { PaginationDto } from './dto/pagination.dto';
 import { GetEventDataOptions } from './elastic-search.options';
 
-@Controller('search')
+@Controller('v1')
 export class ElasticSearchController {
     constructor(private readonly elasticSearchService: ElasticSearchService) {}
 
@@ -51,7 +51,7 @@ export class ElasticSearchController {
     //     return await this.elasticSearchService.searchEvent(user_id, api_id, query.event_status);
     // }
 
-    @Get(Apis.GET_EVENT_DATA.endpoint)
+    @Get(Apis.SEARCH_EVENTS.endpoint)
     @UseGuards(JwtAuthGuard, CustomThrottlerGuard)
     @GetEventDataOptions()
     async getEventData(
@@ -60,7 +60,7 @@ export class ElasticSearchController {
         @Query() pagination: PaginationDto,
         @Req() req) {
         const user_id = req.user.id;
-        const api_id = Apis.GET_EVENT_DATA.id;
+        const api_id = Apis.SEARCH_EVENTS.id;
         return await this.elasticSearchService.getEventData(user_id, api_id, filterFields, responseFields, pagination, req);
     }
 }

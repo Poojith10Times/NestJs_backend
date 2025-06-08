@@ -266,7 +266,7 @@ export class ElasticSearchService {
             const endTime = Date.now();
             const apiResponseTime =( endTime - startTime) / 1000;
             try{
-                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.GET_EVENT_DATA.endpoint, apiResponseTime, ip_address || '', statusCode, filterFields, responseFields, errorMessage);
+                await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.SEARCH_EVENTS.endpoint, apiResponseTime, ip_address || '', statusCode, filterFields, responseFields, errorMessage);
             }catch(error){
                 throw error;
             }

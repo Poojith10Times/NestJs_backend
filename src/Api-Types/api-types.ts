@@ -26,13 +26,8 @@ export const Apis: ApiType = {
         endpoint: 'get-basic-advanced',
         id: '70d07c70-f4bd-41d1-8dd4-dd5fdbab4320'
     },
-    SEARCH_EVENT: {
-        endpoint: 'search-event',
-        id: 'bc3f92b8-ab8f-4156-a3e5-97efd229492a', 
-    },
-    GET_EVENT_DATA: {
-        endpoint: 'get-event-data',
+    SEARCH_EVENTS: {
+        endpoint: 'search-events',
         id: '3e9d0e4e-b9c9-4e16-8468-9910075c9b88',
     }
-
 }

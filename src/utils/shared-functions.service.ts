@@ -66,16 +66,6 @@ export class SharedFunctionsService {
 
         const must: any[] = [];
 
-        // const addMatchOrTerms = (field: string, value?: string | string[]) => {
-        //     if(value != undefined){
-        //         if(Array.isArray(value)){
-        //             must.push({ terms: { [field]: value } });
-        //         }else{
-        //             must.push({ match: { [field]: value } });
-        //         }
-        //     }
-        // }
-
         const addMatchOrTerms = (field: string, value?: string | string[]) => {
             if(value != undefined){
                 if(Array.isArray(value)){
@@ -96,10 +86,12 @@ export class SharedFunctionsService {
             }
         }
 
-        const addRange = (field: string, gte?: string | number, lte?: string | number) => {
+        const addRange = (field: string, gte?: string | number, lte?: string | number, gt?: string | number, lt?: string | number) => {
             const range: any = {};
             if(gte != undefined) range.gte = gte;
             if(lte != undefined) range.lte = lte;
+            if(gt != undefined) range.gt = gt;
+            if(lt != undefined) range.lt = lt;
             if(Object.keys(range).length > 0){
                 must.push({ range: { [field]: range } });
             }
@@ -113,11 +105,10 @@ export class SharedFunctionsService {
         addMatchOrTerms('event_cityState', fields.state);
         addMatchOrTerms('event_tagName', fields.tags);
 
-        addRange('event_startDate', fields['start.gte'], fields['start.lte']);
-        addRange('event_endDate', fields['end.gte'], fields['end.lte']);
+        addRange('event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
+        addRange('event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
         addRange('event_avgRating', fields.avgRating, undefined);
         addRange('event_following', fields['following.gte'], fields['following.lte']);
-        addRange
 
         if (fields['user.designation'] && fields['user.designation'].length > 0) {
             must.push({
