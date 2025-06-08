@@ -83,7 +83,7 @@ export class ElasticSearchService {
             })
             statusCode = alias.statusCode;
         }catch(error){
-            statusCode = error.status || 500;
+            statusCode = error.statusCode || 500;
             errorMessage = error.message;
             throw error;
         }finally{
@@ -119,7 +119,7 @@ export class ElasticSearchService {
             })
             statusCode = index_data.statusCode;
         }catch(error){
-            statusCode = error.status || 500;
+            statusCode = error.statusCode || 500;
             errorMessage = error.message;
             throw error;
         }finally{
@@ -143,7 +143,7 @@ export class ElasticSearchService {
             })
             statusCode = params.statusCode;
         }catch(error){
-            statusCode = error.status || 500;
+            statusCode = error.statusCode || 500;
             errorMessage = error.message;
             throw error;
         }finally{
@@ -190,7 +190,7 @@ export class ElasticSearchService {
             })
             statusCode = basic_advanced_data.statusCode;
         }catch(error){
-            statusCode = error.status || 500;
+            statusCode = error.statusCode || 500;
             errorMessage = error.message;
             throw error;
         }finally{
@@ -226,7 +226,7 @@ export class ElasticSearchService {
                 const unauthorizedFilters = requestedFilters.filter(filter => !allowedFilter.includes(filter));
                 if (unauthorizedFilters.length > 0) throw new HttpException(`Invalid filter(s): ${unauthorizedFilters.join(', ')}`, HttpStatus.BAD_REQUEST);
             }catch(error){
-                statusCode = error.status || 500;
+                statusCode = error.statusCode || 500;
                 errorMessage = error.message;
                 throw error;
             }
@@ -259,7 +259,7 @@ export class ElasticSearchService {
                 results: eventData?.body?.hits?.hits.map(hit => hit._source),
             }
         }catch(error){
-            statusCode = error.status || 500;
+            statusCode = error.statusCode || 500;
             errorMessage = error.message;
             throw error;
         }finally{

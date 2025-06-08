@@ -105,20 +105,21 @@ export class SharedFunctionsService {
             }
         }
 
-        addMatchOrTerms('event_categoryName', fields.event_categoryName);
-        addMatchOrTerms('event_cityName', fields.event_cityName);
-        addMatchOrTerms('event_countryName', fields.event_countryName);
-        addMatchOrTerms('event_pricing', fields.event_pricing);
-        addMatchOrTerms('event_type', fields.event_type);
-        addMatchOrTerms('event_cityState', fields.event_cityState);
-        addMatchOrTerms('event_tagName', fields.event_tagName);
+        addMatchOrTerms('event_categoryName', fields.category);
+        addMatchOrTerms('event_cityName', fields.city);
+        addMatchOrTerms('event_countryName', fields.country);
+        addMatchOrTerms('event_pricing', fields.price);
+        addMatchOrTerms('event_type', fields.type);
+        addMatchOrTerms('event_cityState', fields.state);
+        addMatchOrTerms('event_tagName', fields.tags);
 
-        addRange('event_startDate', fields.startDate_gte, fields.startDate_lte);
-        addRange('event_endDate', fields.endDate_gte, fields.endDate_lte);
-        addRange('event_avgRating', fields.event_avgRating, undefined);
-        addRange('event_following', fields.event_following_gte, fields.event_following_lte);
+        addRange('event_startDate', fields['start.gte'], fields['start.lte']);
+        addRange('event_endDate', fields['end.gte'], fields['end.lte']);
+        addRange('event_avgRating', fields.avgRating, undefined);
+        addRange('event_following', fields['following.gte'], fields['following.lte']);
+        addRange
 
-        if (fields.user_designationName && fields.user_designationName.length > 0) {
+        if (fields['user.designation'] && fields['user.designation'].length > 0) {
             must.push({
                 has_child: {
                     type: "user",
@@ -127,7 +128,7 @@ export class SharedFunctionsService {
                             must: [
                                 {
                                     terms: {
-                                        "user_designationName": fields.user_designationName
+                                        "user_designationName": fields['user.designation']
                                     }
                                 }
                             ]

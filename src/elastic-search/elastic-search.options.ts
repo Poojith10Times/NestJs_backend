@@ -30,32 +30,32 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         default: 0,
         description: 'Offset',
     },
-    event_categoryName: {
+    category: {
         required: false,
         type: String,
         description: 'Event Category Name'
     },
-    event_cityName: {
+    city: {
         required: false,
         type: String,
         description: 'Event City Name'
     },
-    event_cityState: {
+    state: {
         required: false,
         type: String,
         description: 'Event City State'
     },
-    event_countryName: {
+    country: {
         required: false,
         type: String,
         description: 'Event Country Name'
     },
-    event_tagName: {
+    tags: {
         required: false,
         type: String,
         description: 'Event Tag Name'
     },
-    event_pricing: {
+    price: {
         required: false,
         type: String,
         description: 'Event Pricing',
@@ -63,32 +63,32 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
             enum: ['free', 'paid', 'not_available', 'free-paid', 'free-paid-not_available']
         }
     },
-    user_designationName: {
+    "user.designation": {
         required: false,
         type: String,
         description: 'User Designation Name'
     },
-    endDate_gte: {
+    "end.gte": {
         required: false,
         type: String,
         description: 'End Date Greater Than or Equal To'
     },
-    endDate_lte: {
+    "end.lte": {
         required: false,
         type: String,
         description: 'End Date Less Than or Equal To'
     },
-    startDate_gte: {
+    "start.gte": {
         required: false,
         type: String,
         description: 'Start Date Greater Than or Equal To'
     },
-    startDate_lte: {
+    "start.lte": {
         required: false,
         type: String,
         description: 'Start Date Less Than or Equal To'
     },
-    event_type: {
+    "type": {
         required: false,
         type: String,
         description: 'Event Type',
@@ -96,17 +96,17 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
             enum: ['Tradeshow','Conference','Business Floor','Workshop','meetx','Festival','Sport']
         }
     },
-    event_following_gte: {
+    "following.gte": {
         required: false,
         type: String,
         description: 'Event Following Greater Than or Equal To'
     },
-    event_following_lte: {
+    "following.lte": {
         required: false,
         type: String,
         description: 'Event Following Less Than or Equal To'
     },
-    event_avgRating: {
+    "avgRating": {
         required: false,
         type: String,
         description: 'Event Average Rating',
@@ -114,4 +114,24 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
             enum: ['1', '2', '3', '4', '5']
         }
     },
+    "start.gt": {
+        required: false,
+        type: String,
+        description: 'Start Date Greater Than'
+    },
+    "end.gt": {
+        required: false,
+        type: String,
+        description: 'End Date Greater Than'
+    },
+    "start.lt": {
+        required: false,
+        type: String,
+        description: 'Start Date Less Than'
+    },
+    "end.lt": {
+        required: false,
+        type: String,
+        description: 'End Date Less Than'
+    }
 }
