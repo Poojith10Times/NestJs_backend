@@ -15,9 +15,6 @@ async function bootstrap() {
   
   // Use Zod validation pipe instead of class-validator
   app.useGlobalPipes(new ZodValidationPipe());
-  
-  // Global prefix
-  app.setGlobalPrefix('api');
 
   patchNestJsSwagger();
   const config = new DocumentBuilder()
@@ -41,7 +38,7 @@ async function bootstrap() {
 
     }
   });
-  
-  await app.listen(2000);
+  const port = process.env.PORT || 2000;
+  await app.listen(port);
 }
 bootstrap();

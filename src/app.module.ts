@@ -12,6 +12,7 @@ import { ElasticSearchModule } from './elastic-search/elastic-search.module';
 import { UtilsModule } from './utils/utils.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
     DemoApiModule,
     ElasticSearchModule,
     UtilsModule,
+    RedisModule,
   ],
 
   providers: [
