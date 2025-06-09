@@ -13,6 +13,9 @@ import { UtilsModule } from './utils/utils.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { RedisModule } from './redis/redis.module';
+import { ApisController } from './apis/apis.controller';
+import { ApisService } from './apis/apis.service';
+import { ApisModule } from './apis/apis.module';
 
 @Module({
   imports: [
@@ -42,6 +45,7 @@ import { RedisModule } from './redis/redis.module';
     ElasticSearchModule,
     UtilsModule,
     RedisModule,
+    ApisModule,
   ],
 
   providers: [
@@ -50,8 +54,9 @@ import { RedisModule } from './redis/redis.module';
       useClass: ZodValidationPipe,
     },
     DemoApiService,
+    ApisService,
   ],
 
-  controllers: [DemoApiController],
+  controllers: [DemoApiController, ApisController],
 })
 export class AppModule {}
