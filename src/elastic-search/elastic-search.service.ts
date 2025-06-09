@@ -252,11 +252,13 @@ export class ElasticSearchService {
                 statusCode = eventData.statusCode;
             }
 
+            const responseNameChange = await this.sharedFunctionsService.responseNameChange(eventData?.body?.hits?.hits);
+
             response = {
                 count: eventData?.body?.hits?.hits.length,
                 next: await this.sharedFunctionsService.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'next', req),
                 previous: await this.sharedFunctionsService.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'previous', req),
-                results: eventData?.body?.hits?.hits.map(hit => hit._source),
+                results: responseNameChange,
             }
         }catch(error){
             statusCode = error.statusCode || 500;

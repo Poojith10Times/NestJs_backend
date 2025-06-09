@@ -180,4 +180,27 @@ export class SharedFunctionsService {
         if(newOffset < 0) return null;
         return `${baseUrl}?limit=${limitNum}&offset=${newOffset}`;
     }
+
+    async responseNameChange(eventData: any) {
+        return eventData.map((item: any) => this.renameEventKeys(item._source));
+    }
+
+    renameEventKeys(event: any) {
+        return {
+            type: event.event_type,
+            start: event.event_startDate,
+            end: event.event_endDate,
+            name: event.event_name,
+            city: event.event_cityName,
+            country: event.event_countryName,
+            tags: event.event_tagName,
+            description: event.event_description,
+            logo: event.event_logo,
+            category: event.event_categoryName,
+            avgRating: event.event_avgRating,
+            id: event.event_id,
+            following: event.event_following,
+            state: event.event_cityState,
+        }
+    }
 }
