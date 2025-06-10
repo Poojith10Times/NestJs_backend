@@ -26,18 +26,17 @@ export const PaginationSchema = z.object({
 export class PaginationDto extends createZodDto(PaginationSchema) {}
 
 export const sortFieldMap: Record<string, string> = {
-    
-        avgRating: "event_avgRating",
-        end: "event_endDate",
-        start: "event_startDate",
-        expectedStart: "event_futureExpexctedStartDate",
-        expectedEnd: "event_futureExpexctedEndDate",
-        created: "event_created",
-        score: "event_score",
-        trendingScore: "event_trendingScore",
-        totalRating: "event_totalRating",
-        totalRequests: "event_totalRequests",
-        speakers: "event_speakers",
-        following: "event_following",
-        companyLevel: "event_companyLevel"
+    avgRating: "event_avgRating",
+    end: "event_endDate",
+    start: "event_startDate",
+    expectedStart: "event_futureExpexctedStartDate",
+    expectedEnd: "event_futureExpexctedEndDate",
+    created: "event_created",
+    score: "event_score",
+    trendingScore: "event_trendingScore",
+    totalRating: "event_totalRating",
+    totalRequests: "event_totalRequests",
+    speakers: "event_speakers",
+    following: "event_following",
+    companyLevel: "event_companyLevel"
 }
