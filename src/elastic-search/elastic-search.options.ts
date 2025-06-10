@@ -30,6 +30,11 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         default: 0,
         description: 'Offset',
     },
+    sort: {
+        required: false,
+        type: String,
+        description: 'Sort',
+    },
     category: {
         required: false,
         type: String,

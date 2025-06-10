@@ -1,12 +1,15 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { FilterType } from "@prisma/client";
 import { FilterDataDto, ResponseDataDto } from "src/elastic-search/dto/event-data.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import { Request } from "express";
+import { sortFieldMap } from "src/elastic-search/dto/pagination.dto";
 
 @Injectable()
 export class SharedFunctionsService {
-    constructor(private readonly prismaService: PrismaService) {}
+    constructor(
+        private readonly prismaService: PrismaService,
+    ) {}
 
     async quotaAndFilterVerification(user_id: string, api_id: string) {
         return await this.prismaService.$transaction(async (tx) => {
@@ -202,5 +205,21 @@ export class SharedFunctionsService {
             following: event.event_following,
             state: event.event_cityState,
         }
+    }
+
+    async parseSortFields( sort: string | undefined) {
+        if (!sort) return [
+            { _id: { order: "asc" , missing: "_last" } }
+        ];
+
+        return sort.split(",").map((field) => {
+            const cleanField = field.startsWith("-") ? field.slice(1) : field;
+            return {
+                [sortFieldMap[cleanField]]: {
+                    order: field.startsWith("-") ? "desc" : "asc",
+                    missing: "_last"
+                }
+            }
+        })
     }
 }

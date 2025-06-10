@@ -12,10 +12,28 @@ import { Request } from 'express';
 export class ElasticSearchService {
     constructor(
         private readonly prismaService: PrismaService, 
-        // private readonly elasticsearchService: ElasticsearchService,
         private readonly elasticsearchService: CustomElasticsearchService,
         private readonly sharedFunctionsService: SharedFunctionsService
     ) {}
+
+    async defaultCaseData(requiredFields: string[], pagination: PaginationDto, sortClause: any[]) {
+        const eventData = await this.elasticsearchService.search({
+            index: process.env.INDEX_NAME,
+            body: {
+                size: pagination?.limit,
+                from: pagination?.offset,
+                sort: sortClause,
+                _source: requiredFields,
+                query: {
+                    bool: {
+                        must: [{ match: { "event_published": "1" } }],
+                        must_not: [{ match: { "event_status": "U" } }]
+                    }
+                }
+            }
+        })
+        return eventData;
+    }
 
     async quotaVerification(user_id: string, api_id: string) {
         await this.prismaService.$transaction(async (tx) => {
@@ -49,25 +67,6 @@ export class ElasticSearchService {
             });
         })
         return true;
-    }
-
-    async defaultCaseData(requiredFields: string[], responseFields: ResponseDataDto, pagination: PaginationDto) {
-        const eventData = await this.elasticsearchService.search({
-            index: process.env.INDEX_NAME,
-            body: {
-                size: pagination?.limit,
-                from: pagination?.offset,
-                sort: [ {"_id": { "order": "asc" }} ],
-                _source: requiredFields,
-                query: {
-                    bool: {
-                        must: [{ match: { "event_published": "1" } }],
-                        must_not: [{ match: { "event_status": "U" } }]
-                    }
-                }
-            }
-        })
-        return eventData;
     }
 
     async getAlias(user_id: string, api_id: string, ip_address: string, filterFields: FilterDataDto, responseFields: ResponseDataDto) {
@@ -231,9 +230,13 @@ export class ElasticSearchService {
                 throw error;
             }
 
+            //build the sort array
+            const sortClause = await this.sharedFunctionsService.parseSortFields(pagination?.sort);
+            console.log(sortClause);
+
             // default api case in case of no fields are selected
             if (Object.values(filterFields).length === 0){
-                eventData = await this.defaultCaseData(requiredFields, responseFields, pagination);
+                eventData = await this.defaultCaseData(requiredFields, pagination, sortClause);
                 statusCode = eventData.statusCode || 200;
             }else{
                 const must = await this.sharedFunctionsService.queryBuilder(filterFields);
@@ -242,7 +245,7 @@ export class ElasticSearchService {
                     body: {
                         size: pagination?.limit,
                         from: pagination?.offset,
-                        sort: [ {"_id": { "order": "asc" }} ],
+                        sort: sortClause,
                         _source: requiredFields,
                         query: {
                             bool: { must: [...must,], must_not: [{ match: { "event_status": "U" } }] }
