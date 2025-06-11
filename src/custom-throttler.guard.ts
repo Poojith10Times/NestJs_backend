@@ -51,7 +51,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
         data: {
           user_id: user?.id || '',
           api_id: api_id || '',
-          ip_address: ip,
+          ip_address: ip || '',
           error_message: error.message,
           endpoint: endpointName || '',
           status_code: HttpStatus.TOO_MANY_REQUESTS,
