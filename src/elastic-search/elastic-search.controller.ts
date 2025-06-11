@@ -7,6 +7,7 @@ import { FilterDataDto, ResponseDataDto } from './dto/event-data.dto';
 import { CustomThrottlerGuard } from 'src/custom-throttler.guard';
 import { PaginationDto } from './dto/pagination.dto';
 import { GetEventDataOptions } from './elastic-search.options';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('v1')
 export class ElasticSearchController {
@@ -52,7 +53,7 @@ export class ElasticSearchController {
     // }
 
     @Get(Apis.SEARCH_EVENTS.endpoint)
-    @UseGuards(JwtAuthGuard, CustomThrottlerGuard)
+    @UseGuards(JwtAuthGuard, ThrottlerGuard)
     @GetEventDataOptions()
     async getEventData(
         @Query() filterFields: FilterDataDto,
