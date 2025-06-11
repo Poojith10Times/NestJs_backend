@@ -55,6 +55,11 @@ export const FilterDataSchema = z.object({
     "start.lt": z.string().date().optional(),
     "end.lt": z.string().date().optional(),
 
+    "active.gte": z.string().date().optional(),
+    "active.lte": z.string().date().optional(),
+    "active.gt": z.string().date().optional(),
+    "active.lt": z.string().date().optional(),
+
     "type": z.preprocess((val) => {
         if (typeof val === 'string') {
             return val.split(',').map((type) => type.trim());

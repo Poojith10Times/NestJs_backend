@@ -221,6 +221,7 @@ export class ElasticSearchService {
             
             try{
                 const allowedFilter = await this.sharedFunctionsService.quotaAndFilterVerification(userId, api_id);
+                console.log(allowedFilter);
                 const requestedFilters = Object.keys(filterFields).filter(key => filterFields[key] != undefined);
                 const unauthorizedFilters = requestedFilters.filter(filter => !allowedFilter.includes(filter));
                 if (unauthorizedFilters.length > 0) throw new HttpException(`Invalid filter(s): ${unauthorizedFilters.join(', ')}`, HttpStatus.BAD_REQUEST);
@@ -232,7 +233,6 @@ export class ElasticSearchService {
 
             //build the sort array
             const sortClause = await this.sharedFunctionsService.parseSortFields(pagination?.sort);
-            console.log(sortClause);
 
             // default api case in case of no fields are selected
             if (Object.values(filterFields).length === 0){
@@ -240,6 +240,7 @@ export class ElasticSearchService {
                 statusCode = eventData.statusCode || 200;
             }else{
                 const must = await this.sharedFunctionsService.queryBuilder(filterFields);
+                console.log(must);
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {
