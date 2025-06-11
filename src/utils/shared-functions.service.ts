@@ -112,7 +112,13 @@ export class SharedFunctionsService {
             if (activeLte) activeFilter.push({ range: { "event_startDate": { lte: activeLte } } });
             if (activeLt) activeFilter.push({ range: { "event_startDate": { lt: activeLt } } });
 
-            activeFilter.forEach(filter => must.push(filter));
+            if (activeFilter.length > 0) {
+                must.push({
+                    bool: {
+                        must: activeFilter
+                    }
+                })
+            }
         }
 
         addMatchOrTerms('event_categoryName', fields.category);
