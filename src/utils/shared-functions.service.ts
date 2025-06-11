@@ -100,6 +100,21 @@ export class SharedFunctionsService {
             }
         }
 
+        // active filter
+        const addActiveFilter = (activeGte?: string, activeLte?: string, activeGt?: string, activeLt?: string) => {
+            const activeFilter: any[] = [];
+
+            // events that end on/after specified date
+            if (activeGte) activeFilter.push({ range: { "event_endDate": { gte: activeGte } } });
+            if (activeGt) activeFilter.push({ range: { "event_endDate": { gt: activeGt } } });
+
+            // events that start on/before specified date
+            if (activeLte) activeFilter.push({ range: { "event_startDate": { lte: activeLte } } });
+            if (activeLt) activeFilter.push({ range: { "event_startDate": { lt: activeLt } } });
+
+            activeFilter.forEach(filter => must.push(filter));
+        }
+
         addMatchOrTerms('event_categoryName', fields.category);
         addMatchOrTerms('event_cityName', fields.city);
         addMatchOrTerms('event_countryName', fields.country);
@@ -112,6 +127,13 @@ export class SharedFunctionsService {
         addRange('event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
         addRange('event_avgRating', fields.avgRating, undefined);
         addRange('event_following', fields['following.gte'], fields['following.lte']);
+
+        addActiveFilter(
+            fields['active.gte'], 
+            fields['active.lte'], 
+            fields['active.gt'], 
+            fields['active.lt']
+        );
 
         if (fields['user.designation'] && fields['user.designation'].length > 0) {
             must.push({

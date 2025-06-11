@@ -138,5 +138,25 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         required: false,
         type: String,
         description: 'End Date Less Than'
+    },
+    "active.gte": {
+        required: false,
+        type: String,
+        description: 'Active Date Greater Than or Equal To'
+    },
+    "active.lte": {
+        required: false,
+        type: String,
+        description: 'Active Date Less Than or Equal To'
+    },
+    "active.gt": {
+        required: false,
+        type: String,
+        description: 'Active Date Greater Than'
+    },
+    "active.lt": {
+        required: false,
+        type: String,
+        description: 'Active Date Less Than'
     }
 }
