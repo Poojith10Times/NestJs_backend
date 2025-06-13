@@ -34,11 +34,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     const userId = payload.sub;
     const cacheKey = `user:${userId}`;
-    const cachedUser = await this.redis.get(cacheKey);
-    if (cachedUser) {
-      console.log('Getting User data from cache', cachedUser);
-      return JSON.parse(cachedUser);
+    // redis fault tolerance
+    let cachedUser: string | null = null;
+    try{
+      cachedUser = await this.redis.get(cacheKey);
+      if (cachedUser) {
+        console.log('Getting User data from cache', cachedUser);
+        return JSON.parse(cachedUser);
+      }
+    } catch (error) {
+      console.warn('Error getting User data from cache', error);
     }
+    // if cache is not found or redis connection is throwing error, get user from database
     console.log('Getting User data from database');
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -54,7 +61,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found or inactive');
     }
     console.log('Setting User data to cache');
-    await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 60); // 60 seconds
+    // redis fault tolerance when setting user data to cache
+    try{
+      await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 60); // 60 seconds
+    } catch (error) {
+      console.warn('Error setting User data to cache', error);
+    }
 
     return {
       id: user.id.toString(),
