@@ -1,10 +1,7 @@
-import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import {
-  ExecutionContext,
   HttpException,
   HttpStatus,
   Injectable,
-  Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import {
@@ -45,24 +42,40 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     
 
     try {
-      return await super.handleRequest(requestProps);
+      let attempts = 0;
+      while (attempts < 3) {
+        try {
+          return await super.handleRequest(requestProps);
+        } catch (err) {
+          attempts++;
+          if (attempts === 3) throw err;
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      return false;
     } catch (error) {
-      await this.prisma.apiUsageLog.create({
-        data: {
-          user_id: user?.id || '',
-          api_id: api_id || '',
-          ip_address: ip,
-          error_message: error.message,
-          endpoint: endpointName || '',
-          status_code: HttpStatus.TOO_MANY_REQUESTS,
-          api_response_time: 0,
-          payload: {
-            filterFields: filterFields as unknown as Prisma.InputJsonValue,
-            responseFields: responseFields as unknown as Prisma.InputJsonValue,
-          },
-        },
-      });
-      throw new HttpException(error.message, HttpStatus.TOO_MANY_REQUESTS);
+      const isRedisError = error?.message?.toLowerCase().includes('redis') || error?.name === 'RedisConnectionError';
+      const statusCode = isRedisError ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.TOO_MANY_REQUESTS;
+      try{
+        await this.prisma.apiUsageLog.create({
+          data: {
+            user_id: user?.id || '',
+            api_id: api_id || '',
+            ip_address: ip,
+            error_message: error.message,
+            endpoint: endpointName || '',
+            status_code: statusCode,
+            api_response_time: 0,
+            payload: {
+              filterFields: filterFields as unknown as Prisma.InputJsonValue,
+              responseFields: responseFields as unknown as Prisma.InputJsonValue,
+            },
+            },
+          });
+      } catch (error) {
+        console.warn('[Throttle] Failed to log usage:', error.message);
+      }
+      throw new HttpException(error.message, statusCode);
     }
   }
 }
