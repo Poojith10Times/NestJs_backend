@@ -2,6 +2,7 @@ import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
 export const FilterDataSchema = z.object({
+    "q": z.string().optional(),
     "category": z.string().optional(),
 
     "city": z.preprocess((val) => {
