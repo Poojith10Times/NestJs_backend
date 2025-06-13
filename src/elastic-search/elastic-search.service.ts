@@ -221,7 +221,6 @@ export class ElasticSearchService {
             
             try{
                 const allowedFilter = await this.sharedFunctionsService.quotaAndFilterVerification(userId, api_id);
-                console.log(allowedFilter);
                 const requestedFilters = Object.keys(filterFields).filter(key => filterFields[key] != undefined);
                 const unauthorizedFilters = requestedFilters.filter(filter => !allowedFilter.includes(filter));
                 if (unauthorizedFilters.length > 0) throw new HttpException(`Invalid filter(s): ${unauthorizedFilters.join(', ')}`, HttpStatus.BAD_REQUEST);
@@ -232,7 +231,7 @@ export class ElasticSearchService {
             }
 
             //build the sort array
-            const sortClause = await this.sharedFunctionsService.parseSortFields(pagination?.sort);
+            const sortClause = await this.sharedFunctionsService.parseSortFields(pagination?.sort, filterFields) || [];
 
             // default api case in case of no fields are selected
             if (Object.values(filterFields).length === 0){

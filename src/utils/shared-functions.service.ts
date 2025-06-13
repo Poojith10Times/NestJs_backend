@@ -69,6 +69,22 @@ export class SharedFunctionsService {
 
         const must: any[] = [];
 
+        const addMultiSearch = (q?: string) => {
+            // TODO: add punchline to mutisearch query
+            if(q != undefined){
+                must.push({
+                    multi_match: {
+                        query: q,
+                        fields: ['event_name^3', 'event_description^2', 'event_categoryName', 'event_abbrName'],
+                        type: 'best_fields',
+                        minimum_should_match: '75%',
+                        tie_breaker: 0.3,
+                        fuzziness: 'AUTO',
+                    }
+                })
+            }
+        }
+
         const addMatchOrTerms = (field: string, value?: string | string[]) => {
             if(value != undefined){
                 if(Array.isArray(value)){
@@ -160,6 +176,9 @@ export class SharedFunctionsService {
             })
         }
 
+        // add multi search
+        addMultiSearch(fields.q);
+
         must.push({ match: { "event_published": "1" } });
         return must;
     }
@@ -235,12 +254,23 @@ export class SharedFunctionsService {
         }
     }
 
-    async parseSortFields( sort: string | undefined) {
-        if (!sort) return [
+    async parseSortFields( sort: string | undefined, fields: FilterDataDto) {
+        if (!sort && !fields.q) return [
             { _id: { order: "asc" , missing: "_last" } }
         ];
 
-        return sort.split(",").map((field) => {
+        // when there is a search query and no sort is provided, sort by score
+        if(fields.q && !sort){
+            return [
+                {
+                    _score: {
+                        order: "desc",
+                    }
+                }
+            ]
+        }
+
+        return sort?.split(",").map((field) => {
             const cleanField = field.startsWith("-") ? field.slice(1) : field;
             return {
                 [sortFieldMap[cleanField]]: {

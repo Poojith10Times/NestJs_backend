@@ -14,6 +14,11 @@ export function GetEventDataOptions() {
 }
 
 export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationDto, ApiQueryOptions> = {
+    q: {
+        required: false,
+        type: String,
+        description: 'Search Query'
+    },
     limit: {
         required: false,
         type: Number,
