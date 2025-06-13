@@ -2,14 +2,18 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { RegisterUserDto, LoginUserDto } from '../user/dto/user.dto';
-import { AuthResponseDto } from './dto/auth.dto';
+import { AuthResponseDto, RefreshTokenRequestDto, RefreshTokenResponseDto } from './dto/auth.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private configService: ConfigService,
+    private prisma: PrismaService,
   ) {}
 
   async register(data: RegisterUserDto): Promise<AuthResponseDto> {
@@ -18,6 +22,7 @@ export class AuthService {
 
     return {
       access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token, 
       user: {
         id: user.id,
         email: user.email,
@@ -50,6 +55,7 @@ export class AuthService {
 
     return {
       access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
       user: {
         id: user.id.toString(),
         email: user.email,
@@ -58,16 +64,170 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(userId: string, email: string) {
-    const payload: JwtPayload = {
-      sub: userId,
-      email: email,
-    };
+  async refreshToken(data: RefreshTokenRequestDto): Promise<RefreshTokenResponseDto> {
+    const { refresh_token } = data;
 
-    const access_token = await this.jwtService.signAsync(payload);
+    try {
+      // First, verify the JWT signature and decode payload
+      const payload = await this.jwtService.verifyAsync(refresh_token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
 
-    return {
-      access_token,
-    };
+      // Find the refresh token in database
+      const tokenRecord = await this.prisma.apiToken.findUnique({
+        where: { 
+          token: refresh_token,
+          is_active: true,
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      if (!tokenRecord) {
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+
+      // Check if user is still active
+      if (tokenRecord.user.status === 'INACTIVE') {
+        throw new UnauthorizedException('User account is inactive');
+      }
+
+      // Verify the payload matches the stored user
+      if (payload.sub !== tokenRecord.user.id) {
+        throw new UnauthorizedException('Token user mismatch');
+      }
+
+      // Generate new tokens
+      const tokens = await this.generateTokens(
+        tokenRecord.user.id,
+        tokenRecord.user.email,
+        tokenRecord.id, // Pass existing token ID to update it
+      );
+
+      return {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      };
+
+    } catch (error) {
+      // JWT verification failed or other error
+      if (error.name === 'TokenExpiredError') {
+        // Clean up expired token from DB
+        await this.cleanupExpiredToken(refresh_token);
+        throw new UnauthorizedException('Refresh token has expired');
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid refresh token');
+      } else {
+        // Re-throw UnauthorizedException from our checks
+        throw error;
+      }
+    }
   }
+
+  async logout(userId: string): Promise<void> {
+    // Deactivate all refresh tokens for this user
+    await this.prisma.apiToken.updateMany({
+      where: { 
+        user_id: userId,
+        is_active: true,
+      },
+      data: { is_active: false },
+    });
+  }
+
+  private async generateTokens(userId: string, email: string, existingTokenId?: string) {
+  const payload: JwtPayload = {
+    sub: userId,
+    email: email,
+  };
+
+  // Generate access token
+  const access_token = await this.jwtService.signAsync(payload, {
+    expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', '30m'),
+  });
+
+  // Generate refresh token
+  const refresh_token = await this.jwtService.signAsync(payload, {
+    expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '30d'),
+  });
+
+  if (existingTokenId) {
+    // Update existing refresh token
+    await this.prisma.apiToken.update({
+      where: { id: existingTokenId },
+      data: {
+        token: refresh_token,
+        refreshed_at: new Date(),
+        last_used_at: new Date(),
+      },
+    });
+  } else {
+    // Check if user already has a refresh token
+    const existingToken = await this.prisma.apiToken.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (existingToken) {
+      // Update the existing token instead of creating new one
+      await this.prisma.apiToken.update({
+        where: { user_id: userId },
+        data: {
+          token: refresh_token,
+          is_active: true,
+          refreshed_at: new Date(),
+          last_used_at: new Date(),
+        },
+      });
+    } else {
+      // Create new refresh token record (first time login)
+      await this.prisma.apiToken.create({
+        data: {
+          user_id: userId,
+          token: refresh_token,
+          is_active: true,
+          last_used_at: new Date(),
+        },
+      });
+    }
+  }
+
+  return {
+    access_token,
+    refresh_token,
+  };
+}
+
+  // private getRefreshTokenMaxAge(): number {
+  //   // 30 days in milliseconds
+  //   return 30 * 24 * 60 * 60 * 1000;
+  // }
+
+  //  async validateRefreshToken(token: string): Promise<boolean> {
+  //   const tokenRecord = await this.prisma.apiToken.findUnique({
+  //     where: { 
+  //       token,
+  //       is_active: true,
+  //     },
+  //   });
+
+  //   if (!tokenRecord) {
+  //     return false;
+  //   }
+
+  //   const refreshTokenAge = Date.now() - tokenRecord.created_at.getTime();
+  //   const maxAge = this.getRefreshTokenMaxAge();
+    
+  //   return refreshTokenAge <= maxAge;
+  // }
+
+  private async cleanupExpiredToken(token: string): Promise<void> {
+    // Deactivate expired token in database
+    await this.prisma.apiToken.updateMany({
+      where: { token },
+      data: { is_active: false },
+    });
+  }
+
+
 }

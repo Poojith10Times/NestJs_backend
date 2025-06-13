@@ -29,6 +29,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    // console.log('JWT Payload received:', payload);
+    
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
@@ -39,15 +41,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       },
     });
 
+    // console.log('User found in DB:', user);
+
     if (!user || user.status === 'INACTIVE') {
+      // console.log('User validation failed:', { user, status: user?.status });
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    return {
+    const result = {
       id: user.id.toString(),
       email: user.email,
       name: user.name,
       status: user.status,
     };
+
+    // console.log('Returning user object:', result);
+    return result;
   }
 }
