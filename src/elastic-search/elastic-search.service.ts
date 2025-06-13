@@ -101,7 +101,6 @@ export class ElasticSearchService {
         let statusCode: number = 200;
         let errorMessage: any = null;
         const isVerified = await this.quotaVerification(user_id, api_id);
-        console.log(process.env.INDEX_NAME);
         try{
             if (!isVerified) throw new NotFoundException('Permission denied');
             index_data = await this.elasticsearchService.search({
@@ -239,7 +238,6 @@ export class ElasticSearchService {
                 statusCode = eventData.statusCode || 200;
             }else{
                 const must = await this.sharedFunctionsService.queryBuilder(filterFields);
-                console.log(must);
                 eventData = await this.elasticsearchService.search({
                     index: process.env.INDEX_NAME,
                     body: {

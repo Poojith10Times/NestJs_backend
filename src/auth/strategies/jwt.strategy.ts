@@ -34,13 +34,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     const userId = payload.sub;
     const cacheKey = `user:${userId}`;
-    console.log(cacheKey);
     const cachedUser = await this.redis.get(cacheKey);
     if (cachedUser) {
-      console.log('Getting data from cache', cachedUser);
+      console.log('Getting User data from cache', cachedUser);
       return JSON.parse(cachedUser);
     }
-    console.log('Getting data from database');
+    console.log('Getting User data from database');
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
@@ -54,7 +53,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user || user.status === 'INACTIVE') {
       throw new UnauthorizedException('User not found or inactive');
     }
-    console.log('Setting data to cache');
+    console.log('Setting User data to cache');
     await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 60); // 60 seconds
 
     return {
