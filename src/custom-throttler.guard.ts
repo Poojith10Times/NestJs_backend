@@ -42,6 +42,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     
 
     try {
+      // retry mechanism for redis connection, if it fails, it will try 3 times
       let attempts = 0;
       while (attempts < 3) {
         try {
