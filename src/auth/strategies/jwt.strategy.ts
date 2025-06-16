@@ -63,7 +63,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     console.log('Setting User data to cache');
     // redis fault tolerance when setting user data to cache
     try{
-      await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 60); // 60 seconds
+      await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 60 * 60 * 24); // 24 hours
     } catch (error) {
       console.warn('Error setting User data to cache', error);
     }
