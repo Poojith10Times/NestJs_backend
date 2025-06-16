@@ -7,6 +7,7 @@ import { Apis } from 'src/Api-Types/api-types';
 import { CustomElasticsearchService } from './custom-elasticsearch.service';
 import { PaginationDto } from './dto/pagination.dto';
 import { Request } from 'express';
+import { retryWithFaultHandling } from 'src/fault-tolerance';
 
 @Injectable()
 export class ElasticSearchService {
@@ -208,10 +209,10 @@ export class ElasticSearchService {
         let errorMessage: any = null;
         const ip_address = req.ip;
         try{
-            const params = await this.prismaService.api.findUnique({
+            const params = await retryWithFaultHandling(async () => await this.prismaService.api.findUnique({
                 where: {id: api_id,},
                 select: {basic_parameters: true,advanced_parameters: true,}
-            });
+            }), { service: 'postgres' });
 
             const basicKeys = (params?.basic_parameters as string[]) || [];
             const advancedKeys = (params?.advanced_parameters as string[]) || [];
@@ -249,7 +250,7 @@ export class ElasticSearchService {
                             bool: { must: [...must,], must_not: [{ match: { "event_status": "U" } }] }
                         }
                     }
-                })
+                });
                 statusCode = eventData.statusCode;
             }
 

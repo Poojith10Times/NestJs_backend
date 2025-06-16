@@ -14,6 +14,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Apis } from 'src/Api-Types/api-types';
 import { FilterDataSchema, ResponseDataSchema } from 'src/elastic-search/dto/event-data.dto';
 import { Prisma } from '@prisma/client';
+import { retryWithFaultHandling } from './fault-tolerance';
 
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
@@ -42,23 +43,12 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     
 
     try {
-      // retry mechanism for redis connection, if it fails, it will try 3 times
-      let attempts = 0;
-      while (attempts < 3) {
-        try {
-          return await super.handleRequest(requestProps);
-        } catch (err) {
-          attempts++;
-          if (attempts === 3) throw err;
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-      return false;
+      return await retryWithFaultHandling(async () => await super.handleRequest(requestProps), { service: 'redis' });
     } catch (error) {
       const isRedisError = error?.message?.toLowerCase().includes('redis') || error?.name === 'RedisConnectionError';
       const statusCode = isRedisError ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.TOO_MANY_REQUESTS;
       try{
-        await this.prisma.apiUsageLog.create({
+        await retryWithFaultHandling(async () => await this.prisma.apiUsageLog.create({
           data: {
             user_id: user?.id || '',
             api_id: api_id || '',
@@ -72,7 +62,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
               responseFields: responseFields as unknown as Prisma.InputJsonValue,
             },
             },
-          });
+          }), { service: 'postgres' });
       } catch (error) {
         console.warn('[Throttle] Failed to log usage:', error.message);
       }

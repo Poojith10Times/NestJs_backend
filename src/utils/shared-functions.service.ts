@@ -4,6 +4,7 @@ import { FilterDataDto, ResponseDataDto } from "src/elastic-search/dto/event-dat
 import { PrismaService } from "src/prisma/prisma.service";
 import { Request } from "express";
 import { sortFieldMap } from "src/elastic-search/dto/pagination.dto";
+import { retryWithFaultHandling } from "src/fault-tolerance";
 
 @Injectable()
 export class SharedFunctionsService {
@@ -12,7 +13,7 @@ export class SharedFunctionsService {
     ) {}
 
     async quotaAndFilterVerification(user_id: string, api_id: string) {
-        return await this.prismaService.$transaction(async (tx) => {
+        return await retryWithFaultHandling(async () => await this.prismaService.$transaction(async (tx) => {
             // Quota verification and decrement
             const updated = await tx.userApiAccess.updateMany({
                 where: {
@@ -62,7 +63,7 @@ export class SharedFunctionsService {
                 .map((access) => access.filter.filter_name);
         
             return allowedFilters;
-        });
+        }), { service: 'postgres' });
     }
 
     async queryBuilder(fields: FilterDataDto): Promise<any[]> {
@@ -185,7 +186,7 @@ export class SharedFunctionsService {
 
     async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, filterFields: FilterDataDto, responseFields: ResponseDataDto, errorMessage: any) {
         try{
-            await this.prismaService.$transaction(async (tx) => {
+            await retryWithFaultHandling(async () => await this.prismaService.$transaction(async (tx) => {
                 await tx.apiUsageLog.create({
                     data: {
                         user_id,
@@ -201,9 +202,9 @@ export class SharedFunctionsService {
                         api_response_time: apiResponseTime,
                     }
                 })
-            })
+            }), { service: 'postgres' });
         }catch(error: any){
-            await this.prismaService.$transaction(async (tx) => {
+            await retryWithFaultHandling(async () => await this.prismaService.$transaction(async (tx) => {
                 await tx.userApiAccess.update({
                     where: {
                         user_id_api_id: {
@@ -217,7 +218,7 @@ export class SharedFunctionsService {
                         }
                     }
                 })
-            })
+            }), { service: 'postgres' });
             throw error;
         }
     }

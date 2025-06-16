@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Redis } from 'ioredis';
+import { retryWithFaultHandling } from 'src/fault-tolerance';
 
 export interface JwtPayload {
   sub: string;
@@ -37,7 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // redis fault tolerance
     let cachedUser: string | null = null;
     try{
-      cachedUser = await this.redis.get(cacheKey);
+      cachedUser = await retryWithFaultHandling(async () => await this.redis.get(cacheKey), { service: 'redis' });
       if (cachedUser) {
         console.log('Getting User data from cache', cachedUser);
         return JSON.parse(cachedUser);
@@ -45,9 +46,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     } catch (error) {
       console.warn('Error getting User data from cache', error);
     }
-    // if cache is not found or redis connection is throwing error, get user from database
     console.log('Getting User data from database');
-    const user = await this.prisma.user.findUnique({
+    const user = await retryWithFaultHandling(async () => await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
         id: true,
@@ -55,7 +55,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         name: true,
         status: true,
       },
-    });
+    }), { service: 'postgres' });
 
     if (!user || user.status === 'INACTIVE') {
       throw new UnauthorizedException('User not found or inactive');
@@ -63,7 +63,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     console.log('Setting User data to cache');
     // redis fault tolerance when setting user data to cache
     try{
-      await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 60 * 60 * 24); // 24 hours
+      await retryWithFaultHandling(async () => await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 60 * 60 * 24), { service: 'redis' }); // 24 hours
     } catch (error) {
       console.warn('Error setting User data to cache', error);
     }
