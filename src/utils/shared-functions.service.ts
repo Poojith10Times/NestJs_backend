@@ -259,12 +259,16 @@ export class SharedFunctionsService {
             { _id: { order: "asc" , missing: "_last" } }
         ];
 
-        // when there is a search query and no sort is provided, sort by score
+        // when there is a search query and no sort is provided, sort by score and start date
         if(fields.q && !sort){
             return [
                 {
                     _score: {
                         order: "desc",
+                    },
+                    event_startDate: {
+                        order: "desc",
+                        missing: "_last"
                     }
                 }
             ]
