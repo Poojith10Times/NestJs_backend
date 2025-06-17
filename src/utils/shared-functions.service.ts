@@ -251,6 +251,9 @@ export class SharedFunctionsService {
             id: event.event_id,
             following: event.event_following,
             state: event.event_cityState,
+            created: event.event_created,
+            exhibitors: event.event_exhibitors,
+            published: event.event_published,
         }
     }
 
