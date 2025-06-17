@@ -17,19 +17,21 @@ export async function retryWithFaultHandling<T>(
         if (isLastAttempt) {
             let service = options?.service ?? 'unknown';
             if (
-            error?.message?.toLowerCase().includes('terminating connection') ||
-            error?.message?.toLowerCase().includes('connection refused') ||
-            error?.message?.toLowerCase().includes('pgbouncer')
+              error?.message?.includes('6432') ||
+              error?.message?.toLowerCase().includes('terminating connection') ||
+              error?.message?.toLowerCase().includes('connection refused') ||
+              error?.message?.toLowerCase().includes('pgbouncer')
             ) {
                 service = 'pgbouncer';
             }
         
             const response: any = {
-            message: `${service} is not available`,
+              message: `${service} is not available`,
+              statusCode: HttpStatus.SERVICE_UNAVAILABLE,
             }
             if (service === 'pgbouncer') response.debounce = true;
 
-            throw new HttpException(response, HttpStatus.SERVICE_UNAVAILABLE);
+            throw new HttpException(response, response.statusCode);
       }
 
       if (attempt < retries) {
