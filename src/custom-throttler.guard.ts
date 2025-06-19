@@ -15,6 +15,7 @@ import { Apis } from 'src/Api-Types/api-types';
 import { FilterDataSchema, ResponseDataSchema } from 'src/elastic-search/dto/event-data.dto';
 import { Prisma } from '@prisma/client';
 import { retryWithFaultHandling } from './fault-tolerance';
+import { PaginationSchema } from 'src/elastic-search/dto/pagination.dto';
 
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
@@ -38,9 +39,23 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     const api_id = Object.values(Apis).find(
       (value) => value.endpoint === endpointName,
     )?.id || '';
-    const filterFields = FilterDataSchema.partial().parse(request.query);
-    const responseFields = ResponseDataSchema.partial().parse(request.query);
     
+    // getting original request query for logging
+    const filterFieldKeys = Object.keys(FilterDataSchema.innerType().shape);
+    const responseFieldKeys = Object.keys(ResponseDataSchema.shape);
+    const paginationKeys = Object.keys(PaginationSchema.shape);
+
+    const requestData = {
+      filterFields: Object.fromEntries(
+        Object.entries(request.query).filter(([key]) => filterFieldKeys.includes(key))
+      ),
+      responseFields: Object.fromEntries(
+        Object.entries(request.query).filter(([key]) => responseFieldKeys.includes(key))
+      ),
+      pagination: Object.fromEntries(
+        Object.entries(request.query).filter(([key]) => paginationKeys.includes(key))
+      )
+    }
 
     try {
       return await retryWithFaultHandling(async () => await super.handleRequest(requestProps), { service: 'redis' });
@@ -58,13 +73,12 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
             status_code: statusCode,
             api_response_time: 0,
             payload: {
-              filterFields: filterFields as unknown as Prisma.InputJsonValue,
-              responseFields: responseFields as unknown as Prisma.InputJsonValue,
-            },
+              requestData: requestData as unknown as Prisma.InputJsonValue,
+            }
             },
           }), { service: 'postgres' });
       } catch (error) {
-        console.warn('[Throttle] Failed to log usage:', error.message);
+        console.warn('[Throttle] Failed to log usage:', error.message); 
       }
       throw new HttpException(error.message, statusCode);
     }

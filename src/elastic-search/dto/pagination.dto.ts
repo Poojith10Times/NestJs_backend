@@ -1,6 +1,25 @@
 import { z } from "zod";
 import { createZodDto } from "nestjs-zod";
 
+export const sortFieldMap: Record<string, string> = {
+    avgRating: "event_avgRating",
+    end: "event_endDate",
+    start: "event_startDate",
+    expectedStart: "event_futureExpexctedStartDate",
+    expectedEnd: "event_futureExpexctedEndDate",
+    created: "event_created",
+    score: "event_score",
+    trendingScore: "event_trendingScore",
+    totalRating: "event_totalRating",
+    totalRequests: "event_totalRequests",
+    speakers: "event_speakers",
+    following: "event_following",
+    companyLevel: "event_companyLevel",
+    exhibitors: "event_exhibitors",
+    editions: "event_editionsCount",
+    speaker: "event_speakers"
+}
+
 export const PaginationSchema = z.object({
     limit: z.preprocess(
         (val) => Number(val ?? "20"),
@@ -19,24 +38,8 @@ export const PaginationSchema = z.object({
             return Object.keys(sortFieldMap).includes(cleanField);
         });
     }, {
-        message: "Invalid sort field"
+        message: "Invalid sort field. Valid fields are: " + Object.keys(sortFieldMap).join(", ")
     }),
 });
 
 export class PaginationDto extends createZodDto(PaginationSchema) {}
-
-export const sortFieldMap: Record<string, string> = {
-    avgRating: "event_avgRating",
-    end: "event_endDate",
-    start: "event_startDate",
-    expectedStart: "event_futureExpexctedStartDate",
-    expectedEnd: "event_futureExpexctedEndDate",
-    created: "event_created",
-    score: "event_score",
-    trendingScore: "event_trendingScore",
-    totalRating: "event_totalRating",
-    totalRequests: "event_totalRequests",
-    speakers: "event_speakers",
-    following: "event_following",
-    companyLevel: "event_companyLevel"
-}

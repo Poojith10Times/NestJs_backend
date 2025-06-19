@@ -54,13 +54,11 @@ export class ApisController {
     @Post('user-api-access')
     async createAccess(@Body() rawBody: any) {
         let parsedBody;
-        console.log(rawBody);
         try {
         parsedBody = CreateUserApiAccessSchema.parse(rawBody);
         } catch (e) {
         throw new BadRequestException(e.errors);
         }
-        console.log(parsedBody);
         const data = await this.apisService.createUserApiAccess(parsedBody);
         return { success: true, data };
     }

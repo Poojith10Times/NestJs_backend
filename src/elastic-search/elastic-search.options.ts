@@ -163,5 +163,52 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         required: false,
         type: String,
         description: 'Active Date Less Than'
+    },
+    "venue": {
+        required: false,
+        type: String,
+        description: 'Event Venue Name'
+    },
+    "speaker": {
+        required: false,
+        type: String,
+        description: 'Event Speaker Count'
+    },
+    "exhibitors": {
+        required: false,
+        type: String,
+        description: 'Event Exhibitors Count'
+    },
+    "editions": {
+        required: false,
+        type: String,
+        description: 'Event Editions Count'
+    },
+    "lat": {
+        required: false,
+        type: String,
+        description: 'Event Latitude'
+    },
+    "lon": {
+        required: false,
+        type: String,
+        description: 'Event Longitude'
+    },
+    "radius": {
+        required: false,
+        type: Number,
+        description: 'Event Radius in KM',
+        schema: {
+            default: 5,
+        }
+    },
+    "unit": {
+        required: false,
+        type: String,
+        description: 'Event Radius Unit',
+        schema: {
+            enum: ['km', 'mi', 'ft'],
+            default: 'km'
+        }
     }
 }
