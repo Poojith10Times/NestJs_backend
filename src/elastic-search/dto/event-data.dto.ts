@@ -76,9 +76,19 @@ export const FilterDataSchema = z.object({
         return val;
     }, z.array(z.string())).optional(),
     
-    "speaker": z.string().optional(),
-    "exhibitors": z.string().optional(),
-    "editions": z.string().optional(),
+    "speaker.gte": z.string().optional(),
+    "speaker.lte": z.string().optional(),
+    "speaker.gt": z.string().optional(),
+    "speaker.lt": z.string().optional(),
+
+    "exhibitors.gte": z.string().optional(),
+    "exhibitors.lte": z.string().optional(),
+    "exhibitors.gt": z.string().optional(),
+    "exhibitors.lt": z.string().optional(),
+    "editions.gte": z.string().optional(),
+    "editions.lte": z.string().optional(),
+    "editions.gt": z.string().optional(),
+    "editions.lt": z.string().optional(),
 
     lat: z.preprocess((val) => {
         if (typeof val === 'number') return val.toString();

@@ -169,21 +169,6 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         type: String,
         description: 'Event Venue Name'
     },
-    "speaker": {
-        required: false,
-        type: String,
-        description: 'Event Speaker Count'
-    },
-    "exhibitors": {
-        required: false,
-        type: String,
-        description: 'Event Exhibitors Count'
-    },
-    "editions": {
-        required: false,
-        type: String,
-        description: 'Event Editions Count'
-    },
     "lat": {
         required: false,
         type: String,
@@ -215,5 +200,65 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         required: false,
         type: String,
         description: 'Event Company Name',
+    },
+    "speaker.gte": {
+        required: false,
+        type: String,
+        description: 'Event Speaker Count Greater Than or Equal To'
+    },
+    "speaker.lte": {
+        required: false,
+        type: String,
+        description: 'Event Speaker Count Less Than or Equal To'
+    },
+    "speaker.gt": {
+        required: false,
+        type: String,
+        description: 'Event Speaker Count Greater Than'
+    },
+    "speaker.lt": {
+        required: false,
+        type: String,
+        description: 'Event Speaker Count Less Than'
+    },
+    "exhibitors.gte": {
+        required: false,
+        type: String,
+        description: 'Event Exhibitors Count Greater Than or Equal To'
+    },
+    "exhibitors.lte": {
+        required: false,
+        type: String,
+        description: 'Event Exhibitors Count Less Than or Equal To'
+    },
+    "exhibitors.gt": {
+        required: false,
+        type: String,
+        description: 'Event Exhibitors Count Greater Than'
+    },
+    "exhibitors.lt": {
+        required: false,
+        type: String,
+        description: 'Event Exhibitors Count Less Than'
+    },
+    "editions.gte": {
+        required: false,
+        type: String,
+        description: 'Event Editions Count Greater Than or Equal To'
+    },
+    "editions.lte": {
+        required: false,
+        type: String,
+        description: 'Event Editions Count Less Than or Equal To'
+    },
+    "editions.gt": {
+        required: false,
+        type: String,
+        description: 'Event Editions Count Greater Than'
+    },
+    "editions.lt": {
+        required: false,
+        type: String,
+        description: 'Event Editions Count Less Than'
     }
 }

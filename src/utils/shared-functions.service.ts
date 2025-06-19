@@ -153,10 +153,10 @@ export class SharedFunctionsService {
         addRange('event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
         addRange('event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
         addRange('event_avgRating', fields.avgRating, undefined);
-        addRange('event_following', fields['following.gte'], fields['following.lte']);
-        addRange('event_speakers', fields.speaker);
-        addRange('event_exhibitors', fields.exhibitors);
-        addRange('event_editionsCount', fields.editions);
+        addRange('event_following', fields['following.gte'], fields['following.lte'], fields['following.gt'], fields['following.lt']);
+        addRange('event_speakers', fields['speaker.gte'], fields['speaker.lte'], fields['speaker.gt'], fields['speaker.lt']);
+        addRange('event_exhibitors', fields['exhibitors.gte'], fields['exhibitors.lte'], fields['exhibitors.gt'], fields['exhibitors.lt']);
+        addRange('event_editionsCount', fields['editions.gte'], fields['editions.lte'], fields['editions.gt'], fields['editions.lt']);
 
         addActiveFilter(
             fields['active.gte'], 
@@ -189,18 +189,13 @@ export class SharedFunctionsService {
 
         // bulding within filter
         if(fields.lat && fields.lon){
-            const lat = fields.lat;
-            const lon = fields.lon;
-            const radius = fields.radius;
-            const unit = fields.unit;
-            console.log(lat, lon, radius, unit);
-            if(lat && lon && radius && unit){
+            if(fields.lat && fields.lon && fields.radius && fields.unit){
                 must.push({
                     geo_distance: { 
-                        distance: `${radius}${unit}`,
+                        distance: `${fields.radius}${fields.unit}`,
                         event_geoLocation: {
-                            lat: parseFloat(lat),
-                            lon: parseFloat(lon)
+                            lat: parseFloat(fields.lat),
+                            lon: parseFloat(fields.lon)
                         }
                     }
                 })
