@@ -69,6 +69,7 @@ export class SharedFunctionsService {
     async queryBuilder(fields: FilterDataDto): Promise<any[]> {
         const must: any[] = [];
 
+        // add multi search query
         const addMultiSearch = (q?: string) => {
             // TODO: add punchline to mutisearch query
             if(q != undefined){
@@ -85,6 +86,7 @@ export class SharedFunctionsService {
             }
         }
 
+        // add match or terms filter
         const addMatchOrTerms = (field: string, value?: string | string[]) => {
             if(value != undefined){
                 if(Array.isArray(value)){
@@ -105,6 +107,7 @@ export class SharedFunctionsService {
             }
         }
 
+        // add range filter
         const addRange = (field: string, gte?: string | number, lte?: string | number, gt?: string | number, lt?: string | number) => {
             const range: any = {};
             if(gte != undefined) range.gte = gte;
@@ -145,6 +148,7 @@ export class SharedFunctionsService {
         addMatchOrTerms('event_cityState', fields.state);
         addMatchOrTerms('event_tagName', fields.tags);
         addMatchOrTerms('event_venueName', fields.venue);
+        addMatchOrTerms('event_companyName', fields.company);
 
         addRange('event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
         addRange('event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);

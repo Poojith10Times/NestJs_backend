@@ -96,6 +96,13 @@ export const FilterDataSchema = z.object({
     unit: z.enum(['km', 'mi', "ft"], {
             invalid_type_error: "unit must be one of: km, mi, ft"
         }).optional().default("km"),
+
+    company: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((company) => company.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
 }).refine((val) => {
     const hasLat = typeof val.lat === 'string';
     const hasLong = typeof val.lon === 'string';

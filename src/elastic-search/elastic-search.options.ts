@@ -210,5 +210,10 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
             enum: ['km', 'mi', 'ft'],
             default: 'km'
         }
+    },
+    "company": {
+        required: false,
+        type: String,
+        description: 'Event Company Name',
     }
 }
