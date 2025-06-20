@@ -3,7 +3,7 @@ import { FilterType } from "@prisma/client";
 import { FilterDataDto, ResponseDataDto } from "src/elastic-search/dto/event-data.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import { Request } from "express";
-import { sortFieldMap } from "src/elastic-search/dto/pagination.dto";
+import { PaginationDto, sortFieldMap } from "src/elastic-search/dto/pagination.dto";
 import { retryWithFaultHandling } from "src/fault-tolerance";
 
 @Injectable()
@@ -67,9 +67,9 @@ export class SharedFunctionsService {
     }
 
     async queryBuilder(fields: FilterDataDto): Promise<any[]> {
-
         const must: any[] = [];
 
+        // add multi search query
         const addMultiSearch = (q?: string) => {
             // TODO: add punchline to mutisearch query
             if(q != undefined){
@@ -86,6 +86,7 @@ export class SharedFunctionsService {
             }
         }
 
+        // add match or terms filter
         const addMatchOrTerms = (field: string, value?: string | string[]) => {
             if(value != undefined){
                 if(Array.isArray(value)){
@@ -106,6 +107,7 @@ export class SharedFunctionsService {
             }
         }
 
+        // add range filter
         const addRange = (field: string, gte?: string | number, lte?: string | number, gt?: string | number, lt?: string | number) => {
             const range: any = {};
             if(gte != undefined) range.gte = gte;
@@ -145,11 +147,16 @@ export class SharedFunctionsService {
         addMatchOrTerms('event_type', fields.type);
         addMatchOrTerms('event_cityState', fields.state);
         addMatchOrTerms('event_tagName', fields.tags);
+        addMatchOrTerms('event_venueName', fields.venue);
+        addMatchOrTerms('event_companyName', fields.company);
 
         addRange('event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
         addRange('event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
         addRange('event_avgRating', fields.avgRating, undefined);
-        addRange('event_following', fields['following.gte'], fields['following.lte']);
+        addRange('event_following', fields['following.gte'], fields['following.lte'], fields['following.gt'], fields['following.lt']);
+        addRange('event_speakers', fields['speaker.gte'], fields['speaker.lte'], fields['speaker.gt'], fields['speaker.lt']);
+        addRange('event_exhibitors', fields['exhibitors.gte'], fields['exhibitors.lte'], fields['exhibitors.gt'], fields['exhibitors.lt']);
+        addRange('event_editionsCount', fields['editions.gte'], fields['editions.lte'], fields['editions.gt'], fields['editions.lt']);
 
         addActiveFilter(
             fields['active.gte'], 
@@ -180,11 +187,27 @@ export class SharedFunctionsService {
         // add multi search
         addMultiSearch(fields.q);
 
+        // bulding within filter
+        if(fields.lat && fields.lon){
+            if(fields.lat && fields.lon && fields.radius && fields.unit){
+                must.push({
+                    geo_distance: { 
+                        distance: `${fields.radius}${fields.unit}`,
+                        event_geoLocation: {
+                            lat: parseFloat(fields.lat),
+                            lon: parseFloat(fields.lon)
+                        }
+                    }
+                })
+            }
+        }
+
+
         must.push({ match: { "event_published": "1" } });
         return must;
     }
 
-    async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, filterFields: FilterDataDto, responseFields: ResponseDataDto, errorMessage: any) {
+    async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, filterFields: FilterDataDto, responseFields: ResponseDataDto, pagination: PaginationDto, errorMessage: any) {
         try{
             await retryWithFaultHandling(async () => await this.prismaService.$transaction(async (tx) => {
                 await tx.apiUsageLog.create({
@@ -196,6 +219,7 @@ export class SharedFunctionsService {
                         payload: {
                             filterFields: filterFields as any,
                             responseFields: responseFields as any,
+                            pagination: pagination as any,
                         },
                         ip_address,
                         status_code: statusCode,

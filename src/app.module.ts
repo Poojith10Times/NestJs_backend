@@ -5,9 +5,6 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { DemoApiModule } from './demo-api/demo-api.module';
-import { DemoApiController } from './demo-api/demo-api.controller';
-import { DemoApiService } from './demo-api/demo-api.service';
 import { ElasticSearchModule } from './elastic-search/elastic-search.module';
 import { UtilsModule } from './utils/utils.module';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -41,7 +38,6 @@ import { ApisModule } from './apis/apis.module';
     PrismaModule,
     AuthModule,
     UserModule,
-    DemoApiModule,
     ElasticSearchModule,
     UtilsModule,
     RedisModule,
@@ -53,10 +49,9 @@ import { ApisModule } from './apis/apis.module';
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
     },
-    DemoApiService,
     ApisService,
   ],
 
-  controllers: [DemoApiController, ApisController],
+  controllers: [ApisController],
 })
 export class AppModule {}

@@ -152,7 +152,6 @@ export class ApisService {
     }
 
     async findApiFilters(apiId: string, query: GetFiltersQueryDto) {
-        console.log(query);
         return await this.prisma.apiFilter.findMany({
           where: {
             api_id: apiId,

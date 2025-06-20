@@ -68,9 +68,64 @@ export const FilterDataSchema = z.object({
         return val;
     }, z.array(z.string())).optional(),
 
-    // event_type: z.enum(['Tradeshow','Conference','Business Floor','Workshop','meetx','Festival','Sport', 'Community', 'Specialty Shows'], {
-    //     invalid_type_error: "event_type must be one of: Tradeshow, Conference, Business Floor, Workshop, meetx, Festival, Sport, Community, Specialty Shows"
-    // }).optional(),
+    // additional filters
+    "venue": z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((venue) => venue.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
+    
+    "speaker.gte": z.string().optional(),
+    "speaker.lte": z.string().optional(),
+    "speaker.gt": z.string().optional(),
+    "speaker.lt": z.string().optional(),
+
+    "exhibitors.gte": z.string().optional(),
+    "exhibitors.lte": z.string().optional(),
+    "exhibitors.gt": z.string().optional(),
+    "exhibitors.lt": z.string().optional(),
+    "editions.gte": z.string().optional(),
+    "editions.lte": z.string().optional(),
+    "editions.gt": z.string().optional(),
+    "editions.lt": z.string().optional(),
+
+    lat: z.preprocess((val) => {
+        if (typeof val === 'number') return val.toString();
+        if (typeof val === 'string') return val;
+        return undefined;
+      }, z.string().optional()),
+  
+    lon: z.preprocess((val) => {
+        if (typeof val === 'number') return val.toString();
+        if (typeof val === 'string') return val;
+        return undefined;
+        }, z.string().optional()),
+
+    radius: z.string().optional().default("5"),
+    unit: z.enum(['km', 'mi', "ft"], {
+            invalid_type_error: "unit must be one of: km, mi, ft"
+        }).optional().default("km"),
+
+    company: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((company) => company.trim());
+        }
+        return val;
+    }, z.array(z.string())).optional(),
+}).refine((val) => {
+    const hasLat = typeof val.lat === 'string';
+    const hasLong = typeof val.lon === 'string';
+    if (hasLat && hasLong) {
+        return true;
+    } else if (!hasLat && !hasLong) {
+        return true;
+    } else {
+        return false;
+    }
+}, {
+    message: "Both latitude and longitude must be provided",
+    path: ['lat', 'long']
 })
 
 export class FilterDataDto extends createZodDto(FilterDataSchema) {}

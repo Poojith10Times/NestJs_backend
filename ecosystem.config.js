@@ -8,7 +8,7 @@ module.exports = {
         env: {
           NODE_ENV: 'development',
           PORT: process.env.PORT,
-          DATABASE_URL: process.env.DATABASE_URL,
+          DATABASE_URL: process.env.DB_URL,
           REDIS_HOST: process.env.REDIS_HOST,
           REDIS_PORT: process.env.REDIS_PORT
         }
