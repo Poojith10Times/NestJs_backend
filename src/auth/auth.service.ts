@@ -15,13 +15,14 @@ export class AuthService {
   async register(data: RegisterUserDto): Promise<AuthResponseDto> {
     const user = await this.userService.createUser(data);
     const tokens = await this.generateTokens(user.id, user.email);
-
+    const apiFilters = await this.userService.giveFilterAndApiAccess(user.id);
     return {
       access_token: tokens.access_token,
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        filters: apiFilters.filters,
       },
     };
   }
