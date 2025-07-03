@@ -233,7 +233,7 @@ export class SharedFunctionsService {
     }
 
 
-    async detemineQueryType(filterFields: FilterDataDto){
+    async determineQueryType(filterFields: FilterDataDto){
         const nonFilterKeys = new Set(['view', 'radius', 'unit', 'isBranded']);  //these keys do not count as actual filters
         const hasActualFilters = Object.keys(filterFields).some(key => filterFields[key as keyof FilterDataDto] !== undefined && !nonFilterKeys.has(key));  //check if any actual filters are present
         const isAggregationView = filterFields.view === 'agg';
@@ -254,11 +254,18 @@ export class SharedFunctionsService {
         }
     }
 
-    async buildAggregationViewResponse(eventData: any, pagination: PaginationDto, req: Request) {
+    async buildAggregationViewResponse(eventData: any, pagination: PaginationDto, req: Request, filterFields: FilterDataDto) {
         const afterKey = eventData?.body?.aggregations?.doc_by_country_city?.after_key;
+        const queryType = await this.determineQueryType(filterFields);
+        if(queryType === 'DEFAULT_AGGREGATION') {
+            return {
+                count: eventData.body.hits,
+                next: await this.getAdvPaginationURL(req, afterKey),
+                results: eventData.body.aggregations,
+            };
+        }
         return {
             count: eventData.body.hits,
-            // next: await this.getAdvPaginationURL(req, afterKey),
             next: await this.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'next', req),
             results: eventData.body.aggregations,
         };

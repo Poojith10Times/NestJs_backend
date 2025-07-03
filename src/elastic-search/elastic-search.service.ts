@@ -126,7 +126,7 @@ export class ElasticSearchService {
 
             //build the sort array
             const sortClause = await this.sharedFunctionsService.parseSortFields(pagination?.sort, filterFields) || [];
-            const queryType = await this.sharedFunctionsService.detemineQueryType(filterFields);
+            const queryType = await this.sharedFunctionsService.determineQueryType(filterFields);
 
             switch(queryType){
                 case 'DEFAULT_LIST':
@@ -140,7 +140,7 @@ export class ElasticSearchService {
                     console.log('Default Aggregation');
                     eventData = await this.getDefaultAggregationData(filterFields);
                     statusCode = eventData.statusCode || 200;
-                    response = await this.sharedFunctionsService.buildAggregationViewResponse(eventData, pagination, req);
+                    response = await this.sharedFunctionsService.buildAggregationViewResponse(eventData, pagination, req, filterFields);
                     break;
 
                 case 'FILTERED_LIST':
@@ -166,7 +166,7 @@ export class ElasticSearchService {
                     console.log('Filtered Aggregation');
                     eventData= await this.getFilteredAggregation(filterFields, pagination);
                     statusCode = eventData.statusCode || 200;
-                    response = await this.sharedFunctionsService.buildAggregationViewResponse(eventData, pagination, req);
+                    response = await this.sharedFunctionsService.buildAggregationViewResponse(eventData, pagination, req, filterFields);
                     break;
 
                 default:
