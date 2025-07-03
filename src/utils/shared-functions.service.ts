@@ -5,6 +5,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { Request } from "express";
 import { PaginationDto, sortFieldMap } from "src/elastic-search/dto/pagination.dto";
 import { retryWithFaultHandling } from "src/fault-tolerance";
+import * as qs from "qs";
 
 @Injectable()
 export class SharedFunctionsService {
@@ -35,21 +36,21 @@ export class SharedFunctionsService {
             // get permitted filters
             const userFilterAccess = await tx.userFilterAccess.findMany({
                 where: {
-                user_id,
-                has_access: true,
-                filter: {
-                    api_id,
-                    is_active: true,
-                },
-                },
-                include: {
-                filter: {
-                    select: {
-                    filter_type: true,
-                    filter_name: true,
-                    is_paid: true,
+                    user_id,
+                    has_access: true,
+                    filter: {
+                        api_id,
+                        is_active: true,
                     },
                 },
+                include: {
+                    filter: {
+                        select: {
+                        filter_type: true,
+                        filter_name: true,
+                        is_paid: true,
+                        },
+                    },
                 },
             });
         
@@ -66,30 +67,219 @@ export class SharedFunctionsService {
         }), { service: 'postgres' });
     }
 
-    async queryBuilder(fields: FilterDataDto): Promise<any[]> {
-        const must: any[] = [];
 
-        // add multi search query
-        const addMultiSearch = (q?: string) => {
-            // TODO: add punchline to mutisearch query
-            if(q != undefined){
-                must.push({
-                    multi_match: {
-                        query: q,
-                        fields: ['event_name^3', 'event_description^2', 'event_categoryName', 'event_abbrName'],
-                        type: 'best_fields',
-                        minimum_should_match: '75%',
-                        tie_breaker: 0.3,
-                        fuzziness: 'AUTO',
+    async getDefaultAggregations(filterFields: FilterDataDto){
+        return {
+            doc_by_country: {
+                terms: {
+                    field: 'event_countryName',
+                    min_doc_count: 1,
+                    size: 500,
+                    order: {
+                        _count: 'desc',
                     }
-                })
+                }
+            },
+            doc_by_city: {
+                terms: {
+                    field: 'event_cityName',
+                    min_doc_count: 1,
+                    size: 10000,
+                    order: {
+                        _count: 'desc',
+                    }
+                }
+            },
+            doc_by_category: {
+                terms: {
+                    field: 'event_categoryName.keyword',
+                    min_doc_count: 1,
+                    size: 1000,
+                    order: {
+                        _count: 'desc',
+                    }
+                }
+            },
+            doc_by_tags: {
+                terms: {
+                    field: 'event_tagName.keyword',
+                    min_doc_count: 1,
+                    size: 1000,
+                    order: {
+                        _count: 'desc',
+                    }
+                }
+            },
+            // query for Testing Index
+            doc_by_month: {
+                date_histogram: {
+                    field: 'event_startDate',
+                    calendar_interval: 'month',
+                    format: 'yyyy-MM-dd',
+                    min_doc_count: 0,
+                    order: {
+                        _count: 'desc',
+                    }
+                }
+            }
+        }
+    }
+
+    async buildBaseQuery(filterFields: FilterDataDto){
+        const must: any[] = [];
+        must.push({ match: { "event_published": "1" } });
+
+        const todayDate = new Date();
+        const startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
+
+        if(filterFields.category) this.addMatchOrTerms(must, 'event_categoryName', filterFields.category);
+        if(filterFields.country) this.addMatchOrTerms(must, 'event_countryName', filterFields.country);
+        if(filterFields.city) this.addMatchOrTerms(must, 'event_cityName', filterFields.city);
+        if(filterFields.type) this.addMatchOrTerms(must, 'event_type', filterFields.type);
+        if(filterFields.products) this.addMatchOrTerms(must, 'event_tagName.keyword', filterFields.products);
+
+        return { bool: { must, } }
+    }
+
+
+    async buildAggregationQuery(filterFields: FilterDataDto, pagination: PaginationDto){
+        const aggregations: any = {};
+        
+        aggregations.doc_by_country = {
+            terms: {
+                field: 'event_countryName',
+                size: 10000,
+                order: {
+                    _count: 'desc',
+                }
+            },
+            aggs: {
+                bucket_truncate: {
+                    bucket_sort: {
+                        size: pagination.limit,
+                        from: pagination.offset
+                    }
+                }
+            }
+        };
+    
+        aggregations.doc_by_city = {
+            terms: {
+                field: 'event_cityName',
+                size: 10000,
+                order: {
+                    _count: 'desc',
+                }
+            },
+            aggs: {
+                bucket_truncate: {
+                    bucket_sort: {
+                        size: pagination.limit,
+                        from: pagination.offset
+                    }
+                }
+            }
+        };
+    
+        aggregations.doc_by_category = {
+            terms: {
+                field: 'event_categoryName.keyword',
+                size: 10000,
+                order: {
+                    _count: 'desc',
+                }
+            },
+            aggs: {
+                bucket_truncate: {
+                    bucket_sort: {
+                        size: pagination.limit,
+                        from: pagination.offset
+                    }
+                }
+            }
+        };
+    
+        aggregations.doc_by_tags = {
+            terms: {
+                field: 'event_tagName.keyword',
+                size: 10000,
+                order: {
+                    _count: 'desc',
+                }
+            },
+            aggs: {
+                bucket_truncate: {
+                    bucket_sort: {
+                        size: pagination.limit,
+                        from: pagination.offset
+                    }
+                }
             }
         }
 
-        // add match or terms filter
-        const addMatchOrTerms = (field: string, value?: string | string[]) => {
-            if(value != undefined){
-                if(Array.isArray(value)){
+        aggregations.doc_by_month = {
+            date_histogram: {
+                field: 'event_startDate',
+                calendar_interval: 'month',
+                format: 'yyyy-MM-dd',
+                min_doc_count: 1,
+                // order: {
+                //     _count: 'desc',
+                // }
+            },
+        }
+
+        return aggregations;
+    }
+
+
+    async detemineQueryType(filterFields: FilterDataDto){
+        const nonFilterKeys = new Set(['view', 'radius', 'unit', 'isBranded']);  //these keys do not count as actual filters
+        const hasActualFilters = Object.keys(filterFields).some(key => filterFields[key as keyof FilterDataDto] !== undefined && !nonFilterKeys.has(key));  //check if any actual filters are present
+        const isAggregationView = filterFields.view === 'agg';
+
+        if (!hasActualFilters && !isAggregationView) { return 'DEFAULT_LIST'; }  //no actual filters and not aggregation view
+        else if (!hasActualFilters && isAggregationView) { return 'DEFAULT_AGGREGATION'; } // no actual filters but aggregation view in request
+        else if (hasActualFilters && !isAggregationView) { return 'FILTERED_LIST'; } // actual filters and no aggregation view
+        else if (hasActualFilters && isAggregationView) { return 'FILTERED_AGGREGATION'; } // actual filters and aggregation view in request
+    }
+
+    async buildListViewResponse(eventData: any, pagination: PaginationDto, req: Request) {
+        const responseNameChange = await this.responseNameChange(eventData?.body?.hits?.hits);
+        return {
+            count: eventData?.body?.hits?.hits.length,
+            next: await this.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'next', req),
+            previous: await this.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'previous', req),
+            data: responseNameChange
+        }
+    }
+
+    async buildAggregationViewResponse(eventData: any, pagination: PaginationDto, req: Request) {
+        const afterKey = eventData?.body?.aggregations?.doc_by_country_city?.after_key;
+        return {
+            count: eventData.body.hits,
+            // next: await this.getAdvPaginationURL(req, afterKey),
+            next: await this.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'next', req),
+            results: eventData.body.aggregations,
+        };
+    }
+
+    private addMatchOrTerms = (must: any[], field: string, value?: string | string[]) => {
+        if (value === 'ALL') {
+            must.push({ match_all: {} }); 
+            return;
+        }
+        if (value != undefined) {
+            const isKeyword = field.includes(".keyword");
+    
+            if (Array.isArray(value)) {
+                if (isKeyword) {
+                    must.push({
+                        terms: {
+                            [field]: value
+                        }
+                    });
+                } else {
                     must.push({
                         bool: {
                             should: value.map(val => ({
@@ -98,24 +288,78 @@ export class SharedFunctionsService {
                                         query: val,
                                     }
                                 }
-                            }))
+                            })),
+                            minimum_should_match: 1
                         }
-                    })
-                }else{
-                    must.push({ match: { [field]: value } });
+                    });
+                }
+            } else {
+                if (isKeyword) {
+                    must.push({
+                        term: {
+                            [field]: value
+                        }
+                    });
+                } else {
+                    must.push({
+                        match_phrase: {
+                            [field]: {
+                                query: value
+                            }
+                        }
+                    });
                 }
             }
         }
+    };
 
-        // add range filter
-        const addRange = (field: string, gte?: string | number, lte?: string | number, gt?: string | number, lt?: string | number) => {
-            const range: any = {};
-            if(gte != undefined) range.gte = gte;
-            if(lte != undefined) range.lte = lte;
-            if(gt != undefined) range.gt = gt;
-            if(lt != undefined) range.lt = lt;
-            if(Object.keys(range).length > 0){
-                must.push({ range: { [field]: range } });
+    private addRange = (must: any[], field: string, gte?: string | number, lte?: string | number, gt?: string | number, lt?: string | number) => {
+        const range: any = {};
+        if(gte != undefined) range.gte = gte;
+        if(lte != undefined) range.lte = lte;
+        if(gt != undefined) range.gt = gt;
+        if(lt != undefined) range.lt = lt;
+        if(Object.keys(range).length > 0){
+            must.push({ range: { [field]: range } });
+        }
+    }
+
+    async queryBuilder(fields: FilterDataDto): Promise<{must: any[], mustNot: any[]}> {
+        const must: any[] = [];
+        const mustNot: any[] = [];
+
+        // add multi search query
+        const addMultiSearch = (q?: string | { include?: string[], exclude?: string[] }) => {
+            // TODO: add punchline to mutisearch query
+            if(!q) return;
+
+            if (typeof q === 'string') {
+                // fuzziness is used in normal search query
+                must.push({
+                    multi_match: {
+                      query: q,
+                      fields: ['event_name^4', 'event_description^3', 'event_categoryName^2', 'event_abbrName'],
+                      type: 'best_fields',
+                      minimum_should_match: '75%',
+                      tie_breaker: 0.4,
+                      fuzziness: 'AUTO',
+                    }
+                  });
+            }else{
+                // fuzziness is not used in multi search query
+                const multiMatchQuery = (keyword: string) => ({
+                    multi_match: {
+                        query: keyword,
+                        fields: ['event_name^4', 'event_description^3', 'event_categoryName^2', 'event_abbrName'],
+                        type: 'best_fields',
+                        minimum_should_match: '100%',
+                        tie_breaker: 0.4,
+                    }
+                });
+                if(typeof q === 'object') {
+                    if(q.include && q.include.length > 0) q.include.forEach(keyword => must.push(multiMatchQuery(keyword)));
+                    if(q.exclude && q.exclude.length > 0) q.exclude.forEach(keyword => mustNot.push(multiMatchQuery(keyword)));
+                }
             }
         }
 
@@ -140,71 +384,80 @@ export class SharedFunctionsService {
             }
         }
 
-        addMatchOrTerms('event_categoryName', fields.category);
-        addMatchOrTerms('event_cityName', fields.city);
-        addMatchOrTerms('event_countryName', fields.country);
-        addMatchOrTerms('event_pricing', fields.price);
-        addMatchOrTerms('event_type', fields.type);
-        addMatchOrTerms('event_cityState', fields.state);
-        addMatchOrTerms('event_tagName', fields.tags);
-        addMatchOrTerms('event_venueName', fields.venue);
-        addMatchOrTerms('event_companyName', fields.company);
+        this.addMatchOrTerms(must, 'event_categoryName', fields.category);
+        this.addMatchOrTerms(must, 'event_cityName', fields.city);
+        this.addMatchOrTerms(must, 'event_countryName', fields.country);
+        this.addMatchOrTerms(must, 'event_pricing', fields.price);
+        this.addMatchOrTerms(must, 'event_type', fields.type);
+        this.addMatchOrTerms(must, 'event_cityState', fields.state);
+        this.addMatchOrTerms(must, 'event_tagName.keyword', fields.products);
+        this.addMatchOrTerms(must, 'event_venueName', fields.venue);
+        this.addMatchOrTerms(must, 'event_companyName', fields.company);
+        this.addMatchOrTerms(must, 'event_frequency', fields.frequency);
+        this.addMatchOrTerms(must, 'event_functionality', fields.visibility);
+        this.addMatchOrTerms(must, 'event_estimatedTag', fields.estimatedVisitors);
 
-        addRange('event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
-        addRange('event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
-        addRange('event_avgRating', fields.avgRating, undefined);
-        addRange('event_following', fields['following.gte'], fields['following.lte'], fields['following.gt'], fields['following.lt']);
-        addRange('event_speakers', fields['speaker.gte'], fields['speaker.lte'], fields['speaker.gt'], fields['speaker.lt']);
-        addRange('event_exhibitors', fields['exhibitors.gte'], fields['exhibitors.lte'], fields['exhibitors.gt'], fields['exhibitors.lt']);
-        addRange('event_editionsCount', fields['editions.gte'], fields['editions.lte'], fields['editions.gt'], fields['editions.lt']);
+        this.addRange(must, 'event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
+        this.addRange(must, 'event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
+        this.addRange(must, 'event_avgRating', fields.avgRating, undefined);
+        this.addRange(must, 'event_following', fields['following.gte'], fields['following.lte'], fields['following.gt'], fields['following.lt']);
+        this.addRange(must, 'event_speakers', fields['speaker.gte'], fields['speaker.lte'], fields['speaker.gt'], fields['speaker.lt']);
+        this.addRange(must, 'event_exhibitors', fields['exhibitors.gte'], fields['exhibitors.lte'], fields['exhibitors.gt'], fields['exhibitors.lt']);
+        this.addRange(must, 'event_editionsCount', fields['editions.gte'], fields['editions.lte'], fields['editions.gt'], fields['editions.lt']);
 
-        addActiveFilter(
-            fields['active.gte'], 
-            fields['active.lte'], 
-            fields['active.gt'], 
-            fields['active.lt']
-        );
+        // add active filter
+        addActiveFilter( fields['active.gte'], fields['active.lte'], fields['active.gt'], fields['active.lt'] );
 
         if (fields['user.designation'] && fields['user.designation'].length > 0) {
-            must.push({
-                has_child: {
-                    type: "user",
-                    query: {
-                        bool: {
-                            must: [
-                                {
-                                    terms: {
-                                        "user_designationName": fields['user.designation']
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            })
+            must.push({ has_child: { type: "user", query: { bool: { must: [ { terms: { "user_designationName": fields['user.designation'] } } ] } } }});
         }
+
+        // check if event is hybrid, physical or online
+        if(fields.mode !== undefined) {
+            const hybridConditions: any[] = [];
+            // event is hybrid
+            if(fields.mode.includes('hybrid')) hybridConditions.push({match: { "event_hybrid": "1" } });
+            // event is online
+            if(fields.mode.includes('online')) hybridConditions.push({ match: {"event_cityId": "1"} });
+            // event is physical and not online
+            if(fields.mode.includes('physical')) hybridConditions.push({ bool: { must_not: { match: {"event_cityId": "1"} }, must: { match: {"event_hybrid": "0"} }}});
+
+            if (hybridConditions.length === 1) {
+                // if only one condition, push it directly
+                must.push(hybridConditions[0]);
+            }else if (hybridConditions.length > 1) { 
+                // if multiple conditions, use 'should' (OR logic)
+                must.push({bool: { should: hybridConditions, }});
+            }
+        }
+
+        // check the maturity of the event
+        if(fields.maturity !== undefined) {
+            if(fields.maturity === 'new') this.addRange(must, 'event_editionsCount', 1, 1, undefined, undefined);   // new event
+            else if(fields.maturity === 'growing') this.addRange(must, 'event_editionsCount', 2, 3, undefined, undefined); // growing event
+            else if(fields.maturity === 'established') this.addRange(must, 'event_editionsCount', 4, 8, undefined, undefined); // established event
+            else this.addRange(must, 'event_editionsCount', 9, undefined, undefined, undefined); // flagship event
+        }
+
+        // check if event is branded ( TODO: add logic to check if event is series event or not)
+        if(fields.isBranded === true) must.push({exists: { field: "event_brandId" }});
 
         // add multi search
         addMultiSearch(fields.q);
+        addMultiSearch(fields.keywords);
 
         // bulding within filter
         if(fields.lat && fields.lon){
             if(fields.lat && fields.lon && fields.radius && fields.unit){
-                must.push({
-                    geo_distance: { 
-                        distance: `${fields.radius}${fields.unit}`,
-                        event_geoLocation: {
-                            lat: parseFloat(fields.lat),
-                            lon: parseFloat(fields.lon)
-                        }
-                    }
-                })
+                must.push({ 
+                    geo_distance: {  distance: `${fields.radius}${fields.unit}`, 
+                    event_geoLocation: { lat: parseFloat(fields.lat), lon: parseFloat(fields.lon) } }
+                }) 
             }
         }
 
-
         must.push({ match: { "event_published": "1" } });
-        return must;
+        return {must, mustNot};
     }
 
     async saveAndUpdateApiData(user_id: string, api_id: string, endpoint: string, apiResponseTime: number, ip_address: string, statusCode: number, filterFields: FilterDataDto, responseFields: ResponseDataDto, pagination: PaginationDto, errorMessage: any) {
@@ -253,7 +506,24 @@ export class SharedFunctionsService {
         const offsetNum = parseInt(offset);
         let newOffset = type === 'next' ? offsetNum + limitNum : offsetNum - limitNum;
         if(newOffset < 0) return null;
-        return `${baseUrl}?limit=${limitNum}&offset=${newOffset}`;
+        const queryParams = {
+            ...req.query,
+        }
+        delete queryParams.limit;
+        delete queryParams.offset;
+        const queryString = qs.stringify(queryParams, { encode: true });
+        return `${baseUrl}?${queryString}&limit=${limitNum}&offset=${newOffset}`;
+    }
+
+    async getAdvPaginationURL(req: Request, afterKey: string | null) {
+        if(!afterKey) return null;
+        const baseUrl = `${req.protocol}://${req.get('host')}${req.path}`;
+        const queryParams = {
+            ...req.query,
+            after_key: JSON.stringify(afterKey)
+        }
+        const queryString = qs.stringify(queryParams, { encode: true });
+        return `${baseUrl}?${queryString}`;
     }
 
     async responseNameChange(eventData: any) {

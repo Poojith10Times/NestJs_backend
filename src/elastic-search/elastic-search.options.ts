@@ -19,6 +19,18 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         type: String,
         description: 'Search Query'
     },
+    keywords: {
+        required: false,
+        type: String,
+        description: 'Search Query',
+        schema: {
+            type: 'object',
+            properties: {
+                include: { type: 'array', items: { type: 'string' } },
+                exclude: { type: 'array', items: { type: 'string' } }
+            }
+        }
+    },
     limit: {
         required: false,
         type: Number,
@@ -60,7 +72,7 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         type: String,
         description: 'Event Country Name'
     },
-    tags: {
+    "products": {
         required: false,
         type: String,
         description: 'Event Tag Name'
@@ -260,5 +272,68 @@ export const getEventDataOptions: Record<keyof FilterDataDto | keyof PaginationD
         required: false,
         type: String,
         description: 'Event Editions Count Less Than'
+    },
+    "view": {
+        required: false,
+        type: String,
+        description: 'Event View',
+        schema: {
+            enum: ['list', 'agg'],
+            default: 'list'
+        }
+    },
+    "after_key": {
+        required: false,
+        type: String,
+        description: 'After Key'
+    },
+    "frequency": {
+        required: false,
+        type: String,
+        description: 'Event Frequency',
+        schema: {
+            enum: ['weekly', 'monthly', 'quarterly', 'bi-annual', 'annual', 'biennial', 'triennial', 'quinquennial', 'one-time', 'quadrennial']
+        }
+    },
+    "visibility": {
+        required: false,
+        type: String,
+        description: 'Event Visibility',
+        schema: {
+            enum: ['open', 'private', 'draft']
+        }
+    },
+    "mode": {
+        required: false,
+        type: String,
+        description: 'Event Mode',
+        schema: {
+            enum: ['online', 'physical', 'hybrid']
+        }
+    },
+    "estimatedVisitors": {
+        required: false,
+        type: String,
+        description: 'Event Estimated Visitors',
+        schema: {
+            enum: ['nano', 'micro', 'small', 'medium', 'large', 'mega', 'ultra']
+        }
+    },
+    "isBranded": {
+        required: false,
+        type: Boolean,
+        description: 'Event Is Branded',
+        schema: {
+            enum: ['true', 'false'],
+            default: 'false'
+        }
+    },
+    "maturity": {
+        required: false,
+        type: String,
+        description: 'Event Maturity',
+        schema: {
+            enum: ['new', 'growing', 'established', 'flagship']
+        }
     }
 }
