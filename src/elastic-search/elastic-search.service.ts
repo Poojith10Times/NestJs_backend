@@ -19,7 +19,7 @@ export class ElasticSearchService {
 
     async defaultCaseData(requiredFields: string[], pagination: PaginationDto, sortClause: any[]) {
         const eventData = await this.elasticsearchService.search({
-            index: process.env.INDEX_NAME,
+            index: process.env.TESTING_INDEX,
             body: {
                 size: pagination?.limit,
                 from: pagination?.offset,
@@ -33,6 +33,64 @@ export class ElasticSearchService {
                 }
             }
         })
+        return eventData;
+    }
+
+    async getDefaultAggregationData(filterFields: FilterDataDto){
+        const defaultAggregations = await this.sharedFunctionsService.getDefaultAggregations(filterFields);
+        const todayDate = new Date();
+        const startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
+        const query = {
+            bool: {
+                must: [
+                    { match: { "event_published": "1" } },
+                    { range: { "event_startDate": { gte: startDate } } },
+                ],
+                must_not: [
+                    { match: { "event_status": "U" } },
+                ]
+            }
+        }
+
+        return await this.elasticsearchService.search({
+            index: process.env.TESTING_INDEX,
+            body: {
+                size: 0,
+                query,
+                aggs: defaultAggregations,
+            }
+        })
+    }
+
+    async getFilteredAggregation(filterFields: FilterDataDto, pagination: PaginationDto){
+        const baseQuery = await this.sharedFunctionsService.buildBaseQuery(filterFields);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const requestedStartDate = filterFields["start.gte"] ? new Date(filterFields["start.gte"]) : today;
+        const requestedEndDate = filterFields["end.lte"] ? new Date(filterFields["end.lte"]) : undefined;
+
+        if (requestedStartDate < today) throw new HttpException('Start date must be today or later.', HttpStatus.BAD_REQUEST);
+        if (requestedEndDate && requestedEndDate < today) throw new HttpException('End date must be after start date.', HttpStatus.BAD_REQUEST);
+        const startDate = new Date(requestedStartDate.getFullYear(), requestedStartDate.getMonth(), 1).toISOString().split('T')[0];
+
+        const mustQuery = [
+            ...baseQuery.bool.must,
+            { range: { "event_startDate": { gte: startDate } } }
+        ];
+        if(requestedEndDate) mustQuery.push({ range: { "event_endDate": { lte: requestedEndDate.toISOString().split('T')[0] } } });
+
+        const query = { bool: { must: mustQuery, must_not: [{ match: { "event_status": "U" } }] } };
+        const aggregationQuery = await this.sharedFunctionsService.buildAggregationQuery(filterFields, pagination);
+        const eventData = await this.elasticsearchService.search({
+            // index: process.env.INDEX_NAME,   //for staging data testing
+            index: process.env.TESTING_INDEX,
+            body: {
+                size: 0,
+                query,
+                aggs: aggregationQuery,
+            }
+        })
+
         return eventData;
     }
 
@@ -68,35 +126,51 @@ export class ElasticSearchService {
 
             //build the sort array
             const sortClause = await this.sharedFunctionsService.parseSortFields(pagination?.sort, filterFields) || [];
+            const queryType = await this.sharedFunctionsService.detemineQueryType(filterFields);
 
-            // default api case in case of no fields are selected
-            if (Object.values(filterFields).length === 0){
-                eventData = await this.defaultCaseData(requiredFields, pagination, sortClause);
-                statusCode = eventData.statusCode || 200;
-            }else{
-                const must = await this.sharedFunctionsService.queryBuilder(filterFields);
-                eventData = await this.elasticsearchService.search({
-                    index: process.env.INDEX_NAME,
-                    body: {
-                        size: pagination?.limit,
-                        from: pagination?.offset,
-                        sort: sortClause,
-                        _source: requiredFields,
-                        query: {
-                            bool: { must: [...must,], must_not: [{ match: { "event_status": "U" } }] }
+            switch(queryType){
+                case 'DEFAULT_LIST':
+                    console.log('Default List');
+                    eventData = await this.defaultCaseData(requiredFields, pagination, sortClause);
+                    statusCode = eventData.statusCode || 200;
+                    response = await this.sharedFunctionsService.buildListViewResponse(eventData, pagination, req);
+                    break;
+                
+                case 'DEFAULT_AGGREGATION':
+                    console.log('Default Aggregation');
+                    eventData = await this.getDefaultAggregationData(filterFields);
+                    statusCode = eventData.statusCode || 200;
+                    response = await this.sharedFunctionsService.buildAggregationViewResponse(eventData, pagination, req);
+                    break;
+
+                case 'FILTERED_LIST':
+                    console.log('Filtered List');
+                    const {must, mustNot} = await this.sharedFunctionsService.queryBuilder(filterFields);
+                    eventData = await this.elasticsearchService.search({
+                        index: process.env.TESTING_INDEX,
+                        body: {
+                            size: pagination?.limit,
+                            from: pagination?.offset,
+                            sort: sortClause,
+                            _source: requiredFields,
+                            query: {
+                                bool: { must: [...must,], must_not: [...mustNot, { match: { "event_status": "U" } }] }
+                            }
                         }
-                    }
-                });
-                statusCode = eventData.statusCode;
-            }
+                    });
+                    statusCode = eventData.statusCode || 200;
+                    response = await this.sharedFunctionsService.buildListViewResponse(eventData, pagination, req);
+                    break;
 
-            const responseNameChange = await this.sharedFunctionsService.responseNameChange(eventData?.body?.hits?.hits);
+                case 'FILTERED_AGGREGATION':
+                    console.log('Filtered Aggregation');
+                    eventData= await this.getFilteredAggregation(filterFields, pagination);
+                    statusCode = eventData.statusCode || 200;
+                    response = await this.sharedFunctionsService.buildAggregationViewResponse(eventData, pagination, req);
+                    break;
 
-            response = {
-                count: eventData?.body?.hits?.hits.length,
-                next: await this.sharedFunctionsService.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'next', req),
-                previous: await this.sharedFunctionsService.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'previous', req),
-                results: responseNameChange,
+                default:
+                    throw new HttpException('Invalid query type', HttpStatus.BAD_REQUEST);
             }
         }catch(error){
             statusCode = error.statusCode || 500;

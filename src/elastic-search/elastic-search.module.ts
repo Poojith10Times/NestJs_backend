@@ -14,7 +14,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
       provide: CustomElasticsearchService,
       useFactory: (configService: ConfigService) => {
         return new CustomElasticsearchService({
-          node: configService.get('ELASTIC_SEARCH_HOST'),
+          node: configService.get('SERVER_HOST'),  //for server testing
+          // node: configService.get('ELASTIC_SEARCH_HOST'),  //for staging data testing
         });
       },
       inject: [ConfigService],
@@ -24,13 +25,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
   exports: [ElasticSearchService, CustomElasticsearchService],
   imports: [
     ConfigModule,
-    // ElasticsearchModule.registerAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: async (configService: ConfigService) => ({
-    //     node: configService.get('ELASTIC_SEARCH_HOST'),
-    //   }),
-    //   inject: [ConfigService],
-    // }),
     UtilsModule,
     AuthModule,
     ThrottlerModule,
