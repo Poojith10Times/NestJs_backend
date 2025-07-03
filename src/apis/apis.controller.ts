@@ -1,7 +1,10 @@
 import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
 import { ApisService } from './apis.service';
 import { CreateApiDto, CreateFiltersDto, CreateUserApiAccessDto, CreateUserApiAccessSchema, CreateUserFilterAccessDto, GetApisQueryDto, GetApisQuerySchema, GetFiltersQueryDto, GetFiltersQuerySchema, GetUserFilterAccessQueryDto, GetUserFilterAccessQuerySchema, UpdateApiDto, UpdateFilterDto, UpdateUserApiAccessDto, UpdateUserFilterAccessDto } from './dto/api.dto';
+import { ApiExcludeController } from '@nestjs/swagger';
 
+
+@ApiExcludeController()
 @Controller('apis')
 export class ApisController {
     constructor(private readonly apisService: ApisService) {}

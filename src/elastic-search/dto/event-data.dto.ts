@@ -139,9 +139,10 @@ export const FilterDataSchema = z.object({
     "isBranded": z.preprocess(
         (val) => {
             if (val === "true") return true;
+            if (val === "false") return false;
             return val;
         },
-        z.boolean().optional().default(false)
+        z.boolean().optional()
     ),
     "maturity": z.preprocess((val) => {
         if (typeof val === 'string') {
