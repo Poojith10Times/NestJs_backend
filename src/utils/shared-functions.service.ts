@@ -129,9 +129,6 @@ export class SharedFunctionsService {
         const must: any[] = [];
         must.push({ match: { "event_published": "1" } });
 
-        const todayDate = new Date();
-        const startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
-
         if(filterFields.category) this.addMatchOrTerms(must, 'event_categoryName', filterFields.category);
         if(filterFields.country) this.addMatchOrTerms(must, 'event_countryName', filterFields.country);
         if(filterFields.city) this.addMatchOrTerms(must, 'event_cityName', filterFields.city);
