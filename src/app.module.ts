@@ -13,6 +13,7 @@ import { RedisModule } from './redis/redis.module';
 import { ApisController } from './apis/apis.controller';
 import { ApisService } from './apis/apis.service';
 import { ApisModule } from './apis/apis.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -52,6 +53,6 @@ import { ApisModule } from './apis/apis.module';
     ApisService,
   ],
 
-  controllers: [ApisController],
+  controllers: [ApisController, HealthController],
 })
 export class AppModule {}

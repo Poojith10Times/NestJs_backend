@@ -272,10 +272,10 @@ export class SharedFunctionsService {
     }
 
     private addMatchOrTerms = (must: any[], field: string, value?: string | string[]) => {
-        if (value === 'ALL') {
-            must.push({ match_all: {} }); 
-            return;
-        }
+        // if (value === 'ALL') {
+        //     must.push({ match_all: {} }); 
+        //     return;
+        // }
         if (value != undefined) {
             const isKeyword = field.includes(".keyword");
     
