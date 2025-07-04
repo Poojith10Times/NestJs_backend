@@ -18,6 +18,7 @@ export class ElasticSearchService {
     ) {}
 
     async defaultCaseData(requiredFields: string[], pagination: PaginationDto, sortClause: any[]) {
+        const startTime = Date.now();
         const eventData = await this.elasticsearchService.search({
             index: process.env.TESTING_INDEX,
             body: {
@@ -33,6 +34,9 @@ export class ElasticSearchService {
                 }
             }
         })
+        const endTime = Date.now();
+        const apiResponseTime = (endTime - startTime) / 1000;
+        console.log(`Default List ElasticSearch API Response Time: ${apiResponseTime} seconds`);
         return eventData;
     }
 
@@ -51,8 +55,8 @@ export class ElasticSearchService {
                 ]
             }
         }
-
-        return await this.elasticsearchService.search({
+        const startTime = Date.now();
+        const eventData = await this.elasticsearchService.search({
             index: process.env.TESTING_INDEX,
             body: {
                 size: 0,
@@ -60,6 +64,10 @@ export class ElasticSearchService {
                 aggs: defaultAggregations,
             }
         })
+        const endTime = Date.now();
+        const apiResponseTime = (endTime - startTime) / 1000;
+        console.log(`Default Aggregation ElasticSearch API Response Time: ${apiResponseTime} seconds`);
+        return eventData;
     }
 
     async getFilteredAggregation(filterFields: FilterDataDto, pagination: PaginationDto){
@@ -81,6 +89,7 @@ export class ElasticSearchService {
 
         const query = { bool: { must: mustQuery, must_not: [{ match: { "event_status": "U" } }] } };
         const aggregationQuery = await this.sharedFunctionsService.buildAggregationQuery(filterFields, pagination);
+        const startTime = Date.now();
         const eventData = await this.elasticsearchService.search({
             // index: process.env.INDEX_NAME,   //for staging data testing
             index: process.env.TESTING_INDEX,
@@ -90,7 +99,9 @@ export class ElasticSearchService {
                 aggs: aggregationQuery,
             }
         })
-
+        const endTime = Date.now();
+        const apiResponseTime = (endTime - startTime) / 1000;
+        console.log(`Filtered Aggregation ElasticSearch API Response Time: ${apiResponseTime} seconds`);
         return eventData;
     }
 
@@ -146,6 +157,7 @@ export class ElasticSearchService {
                 case 'FILTERED_LIST':
                     console.log('Filtered List');
                     const {must, mustNot} = await this.sharedFunctionsService.queryBuilder(filterFields);
+                    const startTime = Date.now();
                     eventData = await this.elasticsearchService.search({
                         index: process.env.TESTING_INDEX,
                         body: {
@@ -158,13 +170,16 @@ export class ElasticSearchService {
                             }
                         }
                     });
+                    const endTime = Date.now();
+                    const apiResponseTime = (endTime - startTime) / 1000;
+                    console.log(`Filtered List ElasticSearch API Response Time: ${apiResponseTime} seconds`);
                     statusCode = eventData.statusCode || 200;
                     response = await this.sharedFunctionsService.buildListViewResponse(eventData, pagination, req);
                     break;
 
                 case 'FILTERED_AGGREGATION':
                     console.log('Filtered Aggregation');
-                    eventData= await this.getFilteredAggregation(filterFields, pagination);
+                    eventData = await this.getFilteredAggregation(filterFields, pagination);
                     statusCode = eventData.statusCode || 200;
                     response = await this.sharedFunctionsService.buildAggregationViewResponse(eventData, pagination, req, filterFields);
                     break;
@@ -181,6 +196,7 @@ export class ElasticSearchService {
             const apiResponseTime =( endTime - startTime) / 1000;
             try{
                 await this.sharedFunctionsService.saveAndUpdateApiData(userId, api_id,Apis.SEARCH_EVENTS.endpoint, apiResponseTime, ip_address || '', statusCode, filterFields, responseFields, pagination, errorMessage);
+                console.log(`Total API Response Time: ${apiResponseTime} seconds`);
             }catch(error){
                 throw error;
             }
