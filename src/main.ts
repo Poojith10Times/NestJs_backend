@@ -31,11 +31,10 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup(`api/docs`, app, document, {
+  SwaggerModule.setup(`api/${process.env.SWAGGER_SECRET}/docs`, app, document, {
     yamlDocumentUrl: `api/yaml`,
     swaggerOptions: {
       showCommonExtensions: true,
-
     }
   });
   const port = process.env.PORT || 2000;
