@@ -27,9 +27,9 @@ export class ElasticSearchService {
                 sort: sortClause,
                 _source: requiredFields,
                 query: {
-                    bool: {
-                        must: [{ match: { "event_published": "1" } }],
-                        must_not: [{ match: { "event_status": "U" } }]
+                    filter: {
+                        must: [{ term: { "event_published": "1" } }],
+                        must_not: [{ term: { "event_status": "U" } }]
                     }
                 }
             }
@@ -46,12 +46,12 @@ export class ElasticSearchService {
         const startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
         const query = {
             bool: {
-                must: [
-                    { match: { "event_published": "1" } },
+                filter: [
+                    { term: { "event_published": "1" } },
                     { range: { "event_startDate": { gte: startDate } } },
                 ],
                 must_not: [
-                    { match: { "event_status": "U" } },
+                    { term: { "event_status": "U" } },
                 ]
             }
         }
@@ -87,7 +87,8 @@ export class ElasticSearchService {
         ];
         if(requestedEndDate) mustQuery.push({ range: { "event_endDate": { lte: requestedEndDate.toISOString().split('T')[0] } } });
 
-        const query = { bool: { must: mustQuery, must_not: [{ match: { "event_status": "U" } }] } };
+        const query = { bool: { filter: mustQuery, must_not: [{ term: { "event_status": "U" } }] } };
+        console.log(query);
         const aggregationQuery = await this.sharedFunctionsService.buildAggregationQuery(filterFields, pagination);
         const startTime = Date.now();
         const eventData = await this.elasticsearchService.search({
@@ -166,7 +167,7 @@ export class ElasticSearchService {
                             sort: sortClause,
                             _source: requiredFields,
                             query: {
-                                bool: { must: [...must,], must_not: [...mustNot, { match: { "event_status": "U" } }] }
+                                bool: { must: [...must,], must_not: [...mustNot, { term: { "event_status": "U" } }] }
                             }
                         }
                     });

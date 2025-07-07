@@ -127,7 +127,7 @@ export class SharedFunctionsService {
 
     async buildBaseQuery(filterFields: FilterDataDto){
         const must: any[] = [];
-        must.push({ match: { "event_published": "1" } });
+        must.push({ term: { "event_published": "1" } });
 
         if(filterFields.category) this.addMatchOrTerms(must, 'event_categoryName', filterFields.category);
         if(filterFields.country) this.addMatchOrTerms(must, 'event_countryName', filterFields.country);
@@ -460,7 +460,7 @@ export class SharedFunctionsService {
             }
         }
 
-        must.push({ match: { "event_published": "1" } });
+        must.push({ term: { "event_published": "1" } });
         return {must, mustNot};
     }
 
