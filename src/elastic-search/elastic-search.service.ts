@@ -27,8 +27,8 @@ export class ElasticSearchService {
                 sort: sortClause,
                 _source: requiredFields,
                 query: {
-                    filter: {
-                        must: [{ term: { "event_published": "1" } }],
+                    bool: {
+                        filter: [{ term: { "event_published": "1" } }],
                         must_not: [{ term: { "event_status": "U" } }]
                     }
                 }
