@@ -558,7 +558,7 @@ export class SharedFunctionsService {
 
     async parseSortFields( sort: string | undefined, fields: FilterDataDto) {
         if (!sort && !fields.q) return [
-            { _id: { order: "asc" , missing: "_last" } }
+            { event_id: { order: "asc" , missing: "_last" } }
         ];
 
         // when there is a search query and no sort is provided, sort by score and start date
