@@ -125,17 +125,31 @@ export class SharedFunctionsService {
         }
     }
 
+    // async buildBaseQuery(filterFields: FilterDataDto){
+    //     const must: any[] = [];
+    //     must.push({ term: { "event_published": "1" } });
+
+    //     if(filterFields.category) this.addMatchOrTerms(must, 'event_categoryName', filterFields.category);
+    //     if(filterFields.country) this.addMatchOrTerms(must, 'event_countryName', filterFields.country);
+    //     if(filterFields.city) this.addMatchOrTerms(must, 'event_cityName', filterFields.city);
+    //     if(filterFields.type) this.addMatchOrTerms(must, 'event_type', filterFields.type);
+    //     if(filterFields.products) this.addMatchOrTerms(must, 'event_tagName.keyword', filterFields.products);
+
+    //     return { bool: { must, } }
+    // }
+
     async buildBaseQuery(filterFields: FilterDataDto){
         const must: any[] = [];
+        const filter: any[] = [];
         must.push({ term: { "event_published": "1" } });
 
-        if(filterFields.category) this.addMatchOrTerms(must, 'event_categoryName', filterFields.category);
-        if(filterFields.country) this.addMatchOrTerms(must, 'event_countryName', filterFields.country);
-        if(filterFields.city) this.addMatchOrTerms(must, 'event_cityName', filterFields.city);
-        if(filterFields.type) this.addMatchOrTerms(must, 'event_type', filterFields.type);
-        if(filterFields.products) this.addMatchOrTerms(must, 'event_tagName.keyword', filterFields.products);
+        if(filterFields.category) this.addMatchOrTerms(filter, 'event_categoryName', filterFields.category);
+        if(filterFields.country) this.addMatchOrTerms(filter, 'event_countryName', filterFields.country);
+        if(filterFields.city) this.addMatchOrTerms(filter, 'event_cityName', filterFields.city);
+        if(filterFields.type) this.addMatchOrTerms(filter, 'event_type', filterFields.type);
+        if(filterFields.products) this.addMatchOrTerms(filter, 'event_tagName.keyword', filterFields.products);
 
-        return { bool: { must, } }
+        return { bool: { must, filter} }
     }
 
 
@@ -148,7 +162,9 @@ export class SharedFunctionsService {
                 size: 10000,
                 order: {
                     _count: 'desc',
-                }
+                },
+                execution_hint: 'global_ordinals',
+                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
@@ -166,7 +182,9 @@ export class SharedFunctionsService {
                 size: 10000,
                 order: {
                     _count: 'desc',
-                }
+                },
+                execution_hint: 'global_ordinals',
+                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
@@ -184,7 +202,9 @@ export class SharedFunctionsService {
                 size: 10000,
                 order: {
                     _count: 'desc',
-                }
+                },
+                execution_hint: 'global_ordinals',
+                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
@@ -202,7 +222,9 @@ export class SharedFunctionsService {
                 size: 10000,
                 order: {
                     _count: 'desc',
-                }
+                },
+                execution_hint: 'global_ordinals',
+                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
