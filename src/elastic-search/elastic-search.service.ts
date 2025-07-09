@@ -157,7 +157,7 @@ export class ElasticSearchService {
 
                 case 'FILTERED_LIST':
                     console.log('Filtered List');
-                    const {must, mustNot} = await this.sharedFunctionsService.queryBuilder(filterFields);
+                    const {must, mustNot, filter} = await this.sharedFunctionsService.queryBuilder(filterFields);
                     const startTime = Date.now();
                     eventData = await this.elasticsearchService.search({
                         index: process.env.TESTING_INDEX,
@@ -166,8 +166,11 @@ export class ElasticSearchService {
                             from: pagination?.offset,
                             sort: sortClause,
                             _source: requiredFields,
+                            // query: {
+                            //     bool: { must: [...must,], must_not: [...mustNot, { term: { "event_status": "U" } }] }
+                            // }
                             query: {
-                                bool: { must: [...must,], must_not: [...mustNot, { term: { "event_status": "U" } }] }
+                                bool: { must: [...must,], filter: [...filter], must_not: [...mustNot, { term: { "event_status": "U" } }] }
                             }
                         }
                     });
