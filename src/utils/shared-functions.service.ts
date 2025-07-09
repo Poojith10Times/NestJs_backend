@@ -164,7 +164,6 @@ export class SharedFunctionsService {
                     _count: 'desc',
                 },
                 execution_hint: 'global_ordinals',
-                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
@@ -184,7 +183,6 @@ export class SharedFunctionsService {
                     _count: 'desc',
                 },
                 execution_hint: 'global_ordinals',
-                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
@@ -204,7 +202,6 @@ export class SharedFunctionsService {
                     _count: 'desc',
                 },
                 execution_hint: 'global_ordinals',
-                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
@@ -224,7 +221,6 @@ export class SharedFunctionsService {
                     _count: 'desc',
                 },
                 execution_hint: 'global_ordinals',
-                collect_mode: "breadth_first",
             },
             aggs: {
                 bucket_truncate: {
