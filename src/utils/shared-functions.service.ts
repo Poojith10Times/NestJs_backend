@@ -163,7 +163,6 @@ export class SharedFunctionsService {
                 order: {
                     _count: 'desc',
                 },
-                execution_hint: 'global_ordinals',
             },
             aggs: {
                 bucket_truncate: {
@@ -182,7 +181,6 @@ export class SharedFunctionsService {
                 order: {
                     _count: 'desc',
                 },
-                execution_hint: 'global_ordinals',
             },
             aggs: {
                 bucket_truncate: {
@@ -201,7 +199,6 @@ export class SharedFunctionsService {
                 order: {
                     _count: 'desc',
                 },
-                execution_hint: 'global_ordinals',
             },
             aggs: {
                 bucket_truncate: {
@@ -220,7 +217,6 @@ export class SharedFunctionsService {
                 order: {
                     _count: 'desc',
                 },
-                execution_hint: 'global_ordinals',
             },
             aggs: {
                 bucket_truncate: {
