@@ -506,10 +506,9 @@ export class SharedFunctionsService {
                 const multiMatchQuery = (keyword: string) => ({
                     multi_match: {
                         query: keyword,
-                        fields: ['event_name^4', 'event_description^3', 'event_categoryName^2', 'event_abbrName'],
+                        fields: ['event_name', 'event_description', 'event_categoryName', 'event_abbrName'],
                         type: 'best_fields',
                         minimum_should_match: '100%',
-                        tie_breaker: 0.4,
                     }
                 });
                 if(typeof q === 'object') {
