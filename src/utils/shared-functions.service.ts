@@ -125,19 +125,6 @@ export class SharedFunctionsService {
         }
     }
 
-    // async buildBaseQuery(filterFields: FilterDataDto){
-    //     const must: any[] = [];
-    //     must.push({ term: { "event_published": "1" } });
-
-    //     if(filterFields.category) this.addMatchOrTerms(must, 'event_categoryName', filterFields.category);
-    //     if(filterFields.country) this.addMatchOrTerms(must, 'event_countryName', filterFields.country);
-    //     if(filterFields.city) this.addMatchOrTerms(must, 'event_cityName', filterFields.city);
-    //     if(filterFields.type) this.addMatchOrTerms(must, 'event_type', filterFields.type);
-    //     if(filterFields.products) this.addMatchOrTerms(must, 'event_tagName.keyword', filterFields.products);
-
-    //     return { bool: { must, } }
-    // }
-
     async buildBaseQuery(filterFields: FilterDataDto){
         const must: any[] = [];
         const filter: any[] = [];
@@ -247,7 +234,12 @@ export class SharedFunctionsService {
     async determineQueryType(filterFields: FilterDataDto){
         const nonFilterKeys = new Set(['view', 'radius', 'unit', 'isBranded']);  //these keys do not count as actual filters
         const hasActualFilters = Object.keys(filterFields).some(key => filterFields[key as keyof FilterDataDto] !== undefined && !nonFilterKeys.has(key));  //check if any actual filters are present
-        const isAggregationView = filterFields.view === 'agg';
+        // const isAggregationView = filterFields.view === 'agg';
+        
+        // new testing logic
+        if(filterFields.view && filterFields.view?.includes('agg') && filterFields.view?.includes('list')) return 'M_SEARCH';
+
+        const isAggregationView = filterFields.view?.includes('agg');
 
         if (!hasActualFilters && !isAggregationView) { return 'DEFAULT_LIST'; }  //no actual filters and not aggregation view
         else if (!hasActualFilters && isAggregationView) { return 'DEFAULT_AGGREGATION'; } // no actual filters but aggregation view in request
@@ -280,6 +272,28 @@ export class SharedFunctionsService {
             next: await this.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'next', req),
             results: eventData.body.aggregations,
         };
+    }
+
+    async buildMSearchViewResponse(eventData: any, pagination: PaginationDto, req: Request) {
+        const responses = eventData.body.responses;
+        const listResponse = async () => {
+            const responseNameChange = await this.responseNameChange(responses[0]?.hits?.hits);
+            return {
+                count: responses[0]?.hits?.hits.length,
+                next: await this.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'next', req),
+                previous: await this.getPaginationURL(pagination?.limit.toString(), pagination?.offset.toString(), 'previous', req),
+                data: responseNameChange
+            }
+        }
+        const aggResponse = async () => {
+            return {
+                count: responses[1]?.hits,
+                next: await this.getAdvPaginationURL(req, responses[1]?.aggregations?.doc_by_country_city?.after_key),
+                results: responses[1]?.aggregations,
+            }
+        }
+        const [list, agg] = await Promise.all([listResponse(), aggResponse()]);
+        return {list, agg};
     }
 
     private addMatchOrTerms = (must: any[], field: string, value?: string | string[]) => {
@@ -341,143 +355,6 @@ export class SharedFunctionsService {
             must.push({ range: { [field]: range } });
         }
     }
-
-    // async queryBuilder(fields: FilterDataDto): Promise<{must: any[], mustNot: any[]}> {
-    //     const must: any[] = [];
-    //     const mustNot: any[] = [];
-
-    //     // add multi search query
-    //     const addMultiSearch = (q?: string | { include?: string[], exclude?: string[] }) => {
-    //         // TODO: add punchline to mutisearch query
-    //         if(!q) return;
-
-    //         if (typeof q === 'string') {
-    //             // fuzziness is used in normal search query
-    //             must.push({
-    //                 multi_match: {
-    //                   query: q,
-    //                   fields: ['event_name^4', 'event_description^3', 'event_categoryName^2', 'event_abbrName'],
-    //                   type: 'best_fields',
-    //                   minimum_should_match: '75%',
-    //                   tie_breaker: 0.4,
-    //                   fuzziness: 'AUTO',
-    //                 }
-    //               });
-    //         }else{
-    //             // fuzziness is not used in multi search query
-    //             const multiMatchQuery = (keyword: string) => ({
-    //                 multi_match: {
-    //                     query: keyword,
-    //                     fields: ['event_name^4', 'event_description^3', 'event_categoryName^2', 'event_abbrName'],
-    //                     type: 'best_fields',
-    //                     minimum_should_match: '100%',
-    //                     tie_breaker: 0.4,
-    //                 }
-    //             });
-    //             if(typeof q === 'object') {
-    //                 if(q.include && q.include.length > 0) q.include.forEach(keyword => must.push(multiMatchQuery(keyword)));
-    //                 if(q.exclude && q.exclude.length > 0) q.exclude.forEach(keyword => mustNot.push(multiMatchQuery(keyword)));
-    //             }
-    //         }
-    //     }
-
-    //     // active filter
-    //     const addActiveFilter = (activeGte?: string, activeLte?: string, activeGt?: string, activeLt?: string) => {
-    //         const activeFilter: any[] = [];
-
-    //         // events that end on/after specified date
-    //         if (activeGte) activeFilter.push({ range: { "event_endDate": { gte: activeGte } } });
-    //         if (activeGt) activeFilter.push({ range: { "event_endDate": { gt: activeGt } } });
-
-    //         // events that start on/before specified date
-    //         if (activeLte) activeFilter.push({ range: { "event_startDate": { lte: activeLte } } });
-    //         if (activeLt) activeFilter.push({ range: { "event_startDate": { lt: activeLt } } });
-
-    //         if (activeFilter.length > 0) {
-    //             must.push({
-    //                 bool: {
-    //                     must: activeFilter
-    //                 }
-    //             })
-    //         }
-    //     }
-
-    //     this.addMatchOrTerms(must, 'event_categoryName', fields.category);
-    //     this.addMatchOrTerms(must, 'event_cityName', fields.city);
-    //     this.addMatchOrTerms(must, 'event_countryName', fields.country);
-    //     this.addMatchOrTerms(must, 'event_pricing', fields.price);
-    //     this.addMatchOrTerms(must, 'event_type', fields.type);
-    //     this.addMatchOrTerms(must, 'event_cityState', fields.state);
-    //     this.addMatchOrTerms(must, 'event_tagName.keyword', fields.products);
-    //     this.addMatchOrTerms(must, 'event_venueName', fields.venue);
-    //     this.addMatchOrTerms(must, 'event_companyName', fields.company);
-    //     this.addMatchOrTerms(must, 'event_frequency', fields.frequency);
-    //     this.addMatchOrTerms(must, 'event_functionality', fields.visibility);
-    //     this.addMatchOrTerms(must, 'event_estimatedTag', fields.estimatedVisitors);
-
-    //     this.addRange(must, 'event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
-    //     this.addRange(must, 'event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
-    //     this.addRange(must, 'event_avgRating', fields.avgRating, undefined);
-    //     this.addRange(must, 'event_following', fields['following.gte'], fields['following.lte'], fields['following.gt'], fields['following.lt']);
-    //     this.addRange(must, 'event_speakers', fields['speaker.gte'], fields['speaker.lte'], fields['speaker.gt'], fields['speaker.lt']);
-    //     this.addRange(must, 'event_exhibitors', fields['exhibitors.gte'], fields['exhibitors.lte'], fields['exhibitors.gt'], fields['exhibitors.lt']);
-    //     this.addRange(must, 'event_editionsCount', fields['editions.gte'], fields['editions.lte'], fields['editions.gt'], fields['editions.lt']);
-
-    //     // add active filter
-    //     addActiveFilter( fields['active.gte'], fields['active.lte'], fields['active.gt'], fields['active.lt'] );
-
-    //     if (fields['user.designation'] && fields['user.designation'].length > 0) {
-    //         must.push({ has_child: { type: "user", query: { bool: { must: [ { terms: { "user_designationName": fields['user.designation'] } } ] } } }});
-    //     }
-
-    //     // check if event is hybrid, physical or online
-    //     if(fields.mode !== undefined) {
-    //         const hybridConditions: any[] = [];
-    //         // event is hybrid
-    //         if(fields.mode.includes('hybrid')) hybridConditions.push({match: { "event_hybrid": "1" } });
-    //         // event is online
-    //         if(fields.mode.includes('online')) hybridConditions.push({ match: {"event_cityId": "1"} });
-    //         // event is physical and not online
-    //         if(fields.mode.includes('physical')) hybridConditions.push({ bool: { must_not: { match: {"event_cityId": "1"} }, must: { match: {"event_hybrid": "0"} }}});
-
-    //         if (hybridConditions.length === 1) {
-    //             // if only one condition, push it directly
-    //             must.push(hybridConditions[0]);
-    //         }else if (hybridConditions.length > 1) { 
-    //             // if multiple conditions, use 'should' (OR logic)
-    //             must.push({bool: { should: hybridConditions, }});
-    //         }
-    //     }
-
-    //     // check the maturity of the event
-    //     if(fields.maturity !== undefined) {
-    //         if(fields.maturity === 'new') this.addRange(must, 'event_editionsCount', 1, 1, undefined, undefined);   // new event
-    //         else if(fields.maturity === 'growing') this.addRange(must, 'event_editionsCount', 2, 3, undefined, undefined); // growing event
-    //         else if(fields.maturity === 'established') this.addRange(must, 'event_editionsCount', 4, 8, undefined, undefined); // established event
-    //         else this.addRange(must, 'event_editionsCount', 9, undefined, undefined, undefined); // flagship event
-    //     }
-
-    //     // check if event is branded ( TODO: add logic to check if event is series event or not)
-    //     if(fields.isBranded === true) must.push({exists: { field: "event_brandId" }});
-
-    //     // add multi search
-    //     addMultiSearch(fields.q);
-    //     addMultiSearch(fields.keywords);
-
-    //     // bulding within filter
-    //     if(fields.lat && fields.lon){
-    //         if(fields.lat && fields.lon && fields.radius && fields.unit){
-    //             must.push({ 
-    //                 geo_distance: {  distance: `${fields.radius}${fields.unit}`, 
-    //                 event_geoLocation: { lat: parseFloat(fields.lat), lon: parseFloat(fields.lon) } }
-    //             }) 
-    //         }
-    //     }
-
-    //     must.push({ term: { "event_published": "1" } });
-    //     return {must, mustNot};
-    // }
-
 
     async queryBuilder(fields: FilterDataDto): Promise<{must: any[], mustNot: any[], filter: any[]}> {
         const must: any[] = [];
@@ -737,4 +614,140 @@ export class SharedFunctionsService {
             }
         })
     }
+
+    // async queryBuilder(fields: FilterDataDto): Promise<{must: any[], mustNot: any[]}> {
+    //     const must: any[] = [];
+    //     const mustNot: any[] = [];
+
+    //     // add multi search query
+    //     const addMultiSearch = (q?: string | { include?: string[], exclude?: string[] }) => {
+    //         // TODO: add punchline to mutisearch query
+    //         if(!q) return;
+
+    //         if (typeof q === 'string') {
+    //             // fuzziness is used in normal search query
+    //             must.push({
+    //                 multi_match: {
+    //                   query: q,
+    //                   fields: ['event_name^4', 'event_description^3', 'event_categoryName^2', 'event_abbrName'],
+    //                   type: 'best_fields',
+    //                   minimum_should_match: '75%',
+    //                   tie_breaker: 0.4,
+    //                   fuzziness: 'AUTO',
+    //                 }
+    //               });
+    //         }else{
+    //             // fuzziness is not used in multi search query
+    //             const multiMatchQuery = (keyword: string) => ({
+    //                 multi_match: {
+    //                     query: keyword,
+    //                     fields: ['event_name^4', 'event_description^3', 'event_categoryName^2', 'event_abbrName'],
+    //                     type: 'best_fields',
+    //                     minimum_should_match: '100%',
+    //                     tie_breaker: 0.4,
+    //                 }
+    //             });
+    //             if(typeof q === 'object') {
+    //                 if(q.include && q.include.length > 0) q.include.forEach(keyword => must.push(multiMatchQuery(keyword)));
+    //                 if(q.exclude && q.exclude.length > 0) q.exclude.forEach(keyword => mustNot.push(multiMatchQuery(keyword)));
+    //             }
+    //         }
+    //     }
+
+    //     // active filter
+    //     const addActiveFilter = (activeGte?: string, activeLte?: string, activeGt?: string, activeLt?: string) => {
+    //         const activeFilter: any[] = [];
+
+    //         // events that end on/after specified date
+    //         if (activeGte) activeFilter.push({ range: { "event_endDate": { gte: activeGte } } });
+    //         if (activeGt) activeFilter.push({ range: { "event_endDate": { gt: activeGt } } });
+
+    //         // events that start on/before specified date
+    //         if (activeLte) activeFilter.push({ range: { "event_startDate": { lte: activeLte } } });
+    //         if (activeLt) activeFilter.push({ range: { "event_startDate": { lt: activeLt } } });
+
+    //         if (activeFilter.length > 0) {
+    //             must.push({
+    //                 bool: {
+    //                     must: activeFilter
+    //                 }
+    //             })
+    //         }
+    //     }
+
+    //     this.addMatchOrTerms(must, 'event_categoryName', fields.category);
+    //     this.addMatchOrTerms(must, 'event_cityName', fields.city);
+    //     this.addMatchOrTerms(must, 'event_countryName', fields.country);
+    //     this.addMatchOrTerms(must, 'event_pricing', fields.price);
+    //     this.addMatchOrTerms(must, 'event_type', fields.type);
+    //     this.addMatchOrTerms(must, 'event_cityState', fields.state);
+    //     this.addMatchOrTerms(must, 'event_tagName.keyword', fields.products);
+    //     this.addMatchOrTerms(must, 'event_venueName', fields.venue);
+    //     this.addMatchOrTerms(must, 'event_companyName', fields.company);
+    //     this.addMatchOrTerms(must, 'event_frequency', fields.frequency);
+    //     this.addMatchOrTerms(must, 'event_functionality', fields.visibility);
+    //     this.addMatchOrTerms(must, 'event_estimatedTag', fields.estimatedVisitors);
+
+    //     this.addRange(must, 'event_startDate', fields['start.gte'], fields['start.lte'], fields['start.gt'], fields['start.lt']);
+    //     this.addRange(must, 'event_endDate', fields['end.gte'], fields['end.lte'], fields['end.gt'], fields['end.lt']);
+    //     this.addRange(must, 'event_avgRating', fields.avgRating, undefined);
+    //     this.addRange(must, 'event_following', fields['following.gte'], fields['following.lte'], fields['following.gt'], fields['following.lt']);
+    //     this.addRange(must, 'event_speakers', fields['speaker.gte'], fields['speaker.lte'], fields['speaker.gt'], fields['speaker.lt']);
+    //     this.addRange(must, 'event_exhibitors', fields['exhibitors.gte'], fields['exhibitors.lte'], fields['exhibitors.gt'], fields['exhibitors.lt']);
+    //     this.addRange(must, 'event_editionsCount', fields['editions.gte'], fields['editions.lte'], fields['editions.gt'], fields['editions.lt']);
+
+    //     // add active filter
+    //     addActiveFilter( fields['active.gte'], fields['active.lte'], fields['active.gt'], fields['active.lt'] );
+
+    //     if (fields['user.designation'] && fields['user.designation'].length > 0) {
+    //         must.push({ has_child: { type: "user", query: { bool: { must: [ { terms: { "user_designationName": fields['user.designation'] } } ] } } }});
+    //     }
+
+    //     // check if event is hybrid, physical or online
+    //     if(fields.mode !== undefined) {
+    //         const hybridConditions: any[] = [];
+    //         // event is hybrid
+    //         if(fields.mode.includes('hybrid')) hybridConditions.push({match: { "event_hybrid": "1" } });
+    //         // event is online
+    //         if(fields.mode.includes('online')) hybridConditions.push({ match: {"event_cityId": "1"} });
+    //         // event is physical and not online
+    //         if(fields.mode.includes('physical')) hybridConditions.push({ bool: { must_not: { match: {"event_cityId": "1"} }, must: { match: {"event_hybrid": "0"} }}});
+
+    //         if (hybridConditions.length === 1) {
+    //             // if only one condition, push it directly
+    //             must.push(hybridConditions[0]);
+    //         }else if (hybridConditions.length > 1) { 
+    //             // if multiple conditions, use 'should' (OR logic)
+    //             must.push({bool: { should: hybridConditions, }});
+    //         }
+    //     }
+
+    //     // check the maturity of the event
+    //     if(fields.maturity !== undefined) {
+    //         if(fields.maturity === 'new') this.addRange(must, 'event_editionsCount', 1, 1, undefined, undefined);   // new event
+    //         else if(fields.maturity === 'growing') this.addRange(must, 'event_editionsCount', 2, 3, undefined, undefined); // growing event
+    //         else if(fields.maturity === 'established') this.addRange(must, 'event_editionsCount', 4, 8, undefined, undefined); // established event
+    //         else this.addRange(must, 'event_editionsCount', 9, undefined, undefined, undefined); // flagship event
+    //     }
+
+    //     // check if event is branded ( TODO: add logic to check if event is series event or not)
+    //     if(fields.isBranded === true) must.push({exists: { field: "event_brandId" }});
+
+    //     // add multi search
+    //     addMultiSearch(fields.q);
+    //     addMultiSearch(fields.keywords);
+
+    //     // bulding within filter
+    //     if(fields.lat && fields.lon){
+    //         if(fields.lat && fields.lon && fields.radius && fields.unit){
+    //             must.push({ 
+    //                 geo_distance: {  distance: `${fields.radius}${fields.unit}`, 
+    //                 event_geoLocation: { lat: parseFloat(fields.lat), lon: parseFloat(fields.lon) } }
+    //             }) 
+    //         }
+    //     }
+
+    //     must.push({ term: { "event_published": "1" } });
+    //     return {must, mustNot};
+    // }
 }

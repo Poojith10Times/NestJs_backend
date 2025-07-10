@@ -125,7 +125,22 @@ export const FilterDataSchema = z.object({
         }
         return val;
     }, z.array(z.string())).optional(),
-    "view": z.enum(['list', 'agg']).optional().default("list"),
+    // "view": z.enum(['list', 'agg']).optional().default("list"),
+    "view": z.preprocess((val) => {
+        if (typeof val === 'string') {
+            return val.split(',').map((view) => view.trim().toLowerCase());
+        }
+        return val;
+    }, z.array(z.enum(['list', 'agg'])).optional()).refine((val) => {
+        // If view is provided but empty, throw error
+        if (val !== undefined && val.length === 0) {
+            return false;
+        }
+        return true;
+    }, {
+        message: "View parameter cannot be empty. Must be 'list', 'agg', or both separated by comma",
+        path: ['view']
+    }),
     "after_key": z.string().optional(),
     "frequency": z.enum(['Weekly', 'Monthly', 'Quarterly', 'Bi-annual', 'Annual', 'Biennial', 'Triennial', 'Quinquennial', 'One-time', 'Quadrennial']).optional(),
     "visibility": z.enum(['open', 'private', 'draft']).optional(),

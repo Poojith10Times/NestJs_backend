@@ -17,8 +17,40 @@ export class ElasticSearchService {
         private readonly sharedFunctionsService: SharedFunctionsService
     ) {}
 
+    async getMSearchData(filterFields: FilterDataDto, pagination: PaginationDto, sortClause: any[], requiredFields: string[]){
+        const searches: any[] = [];
+        const defaultAggregations = await this.sharedFunctionsService.getDefaultAggregations(filterFields);
+        const todayDate = new Date();
+        const startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
+        
+        // list query
+        searches.push({index: process.env.TESTING_INDEX})
+        searches.push({
+            size: pagination?.limit,
+            from: pagination?.offset,
+            sort: sortClause,
+            _source: requiredFields,
+            track_total_hits: false,
+            query: {bool: {filter: [{ term: { "event_published": "1" } }], must_not: [{ term: { "event_status": "U" } }]}}
+        })
+
+        // aggregation query
+        searches.push({index: process.env.TESTING_INDEX})
+        searches.push({
+            size: 0,
+            query: {bool: {filter: [{ term: { "event_published": "1" } }, { range: { "event_startDate": { gte: startDate } } }], must_not: [{ term: { "event_status": "U" } }]}},
+            aggs: defaultAggregations
+        })
+        console.time('M Search');
+        const eventData = await this.elasticsearchService.msearch({
+            body: searches
+        })
+        console.timeEnd('M Search');
+        return eventData;
+    }
+
     async defaultCaseData(requiredFields: string[], pagination: PaginationDto, sortClause: any[]) {
-        const startTime = Date.now();
+        console.time('Default List');
         const eventData = await this.elasticsearchService.search({
             index: process.env.TESTING_INDEX,
             body: {
@@ -34,9 +66,7 @@ export class ElasticSearchService {
                 }
             }
         })
-        const endTime = Date.now();
-        const apiResponseTime = (endTime - startTime) / 1000;
-        console.log(`Default List ElasticSearch API Response Time: ${apiResponseTime} seconds`);
+        console.timeEnd('Default List');
         return eventData;
     }
 
@@ -55,7 +85,7 @@ export class ElasticSearchService {
                 ]
             }
         }
-        const startTime = Date.now();
+        console.time('Default Aggregation');
         const eventData = await this.elasticsearchService.search({
             index: process.env.TESTING_INDEX,
             body: {
@@ -64,9 +94,7 @@ export class ElasticSearchService {
                 aggs: defaultAggregations,
             }
         })
-        const endTime = Date.now();
-        const apiResponseTime = (endTime - startTime) / 1000;
-        console.log(`Default Aggregation ElasticSearch API Response Time: ${apiResponseTime} seconds`);
+        console.timeEnd('Default Aggregation');
         return eventData;
     }
 
@@ -91,7 +119,7 @@ export class ElasticSearchService {
         const query = { bool: { filter: mustQuery, must_not: [{ term: { "event_status": "U" } }] } };
         console.log(query);
         const aggregationQuery = await this.sharedFunctionsService.buildAggregationQuery(filterFields, pagination);
-        const startTime = Date.now();
+        console.time('Filtered Aggregation');
         const eventData = await this.elasticsearchService.search({
             // index: process.env.INDEX_NAME,   //for staging data testing
             index: process.env.TESTING_INDEX,
@@ -101,9 +129,7 @@ export class ElasticSearchService {
                 aggs: aggregationQuery,
             }
         })
-        const endTime = Date.now();
-        const apiResponseTime = (endTime - startTime) / 1000;
-        console.log(`Filtered Aggregation ElasticSearch API Response Time: ${apiResponseTime} seconds`);
+        console.timeEnd('Filtered Aggregation');
         return eventData;
     }
 
@@ -142,6 +168,13 @@ export class ElasticSearchService {
             const queryType = await this.sharedFunctionsService.determineQueryType(filterFields);
 
             switch(queryType){
+                case 'M_SEARCH':
+                    console.log('M Search');
+                    eventData = await this.getMSearchData(filterFields, pagination, sortClause, requiredFields);
+                    statusCode = eventData.statusCode || 200;
+                    response = await this.sharedFunctionsService.buildMSearchViewResponse(eventData, pagination, req);
+                    break;
+
                 case 'DEFAULT_LIST':
                     console.log('Default List');
                     eventData = await this.defaultCaseData(requiredFields, pagination, sortClause);
@@ -159,7 +192,7 @@ export class ElasticSearchService {
                 case 'FILTERED_LIST':
                     console.log('Filtered List');
                     const {must, mustNot, filter} = await this.sharedFunctionsService.queryBuilder(filterFields);
-                    const startTime = Date.now();
+                    console.time('Filtered List');
                     eventData = await this.elasticsearchService.search({
                         index: process.env.TESTING_INDEX,
                         body: {
@@ -175,9 +208,7 @@ export class ElasticSearchService {
                             }
                         }
                     });
-                    const endTime = Date.now();
-                    const apiResponseTime = (endTime - startTime) / 1000;
-                    console.log(`Filtered List ElasticSearch API Response Time: ${apiResponseTime} seconds`);
+                    console.timeEnd('Filtered List');
                     statusCode = eventData.statusCode || 200;
                     response = await this.sharedFunctionsService.buildListViewResponse(eventData, pagination, req);
                     break;
