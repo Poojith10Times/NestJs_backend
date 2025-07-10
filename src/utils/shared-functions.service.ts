@@ -232,7 +232,7 @@ export class SharedFunctionsService {
 
 
     async determineQueryType(filterFields: FilterDataDto){
-        const nonFilterKeys = new Set(['view', 'radius', 'unit', 'isBranded']);  //these keys do not count as actual filters
+        const nonFilterKeys = new Set(['radius', 'unit', 'isBranded']);  //these keys do not count as actual filters
         const hasActualFilters = Object.keys(filterFields).some(key => filterFields[key as keyof FilterDataDto] !== undefined && !nonFilterKeys.has(key));  //check if any actual filters are present
         // const isAggregationView = filterFields.view === 'agg';
         

@@ -131,14 +131,14 @@ export const FilterDataSchema = z.object({
             return val.split(',').map((view) => view.trim().toLowerCase());
         }
         return val;
-    }, z.array(z.enum(['list', 'agg'])).optional()).refine((val) => {
+    }, z.array(z.enum(['list', 'agg']))).refine((val) => {
         // If view is provided but empty, throw error
         if (val !== undefined && val.length === 0) {
             return false;
         }
         return true;
     }, {
-        message: "View parameter cannot be empty. Must be 'list', 'agg', or both separated by comma",
+        message: "View parameter cannot be empty. Must be one of the following: list, agg, list,agg",
         path: ['view']
     }),
     "after_key": z.string().optional(),
