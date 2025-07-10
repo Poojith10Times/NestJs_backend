@@ -83,6 +83,7 @@ export class ElasticSearchService {
 
         const mustQuery = [
             ...baseQuery.bool.must,
+            ...baseQuery.bool.filter,
             { range: { "event_startDate": { gte: startDate } } }
         ];
         if(requestedEndDate) mustQuery.push({ range: { "event_endDate": { lte: requestedEndDate.toISOString().split('T')[0] } } });
