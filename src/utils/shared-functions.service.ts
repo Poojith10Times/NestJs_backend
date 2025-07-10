@@ -221,9 +221,6 @@ export class SharedFunctionsService {
                 calendar_interval: 'month',
                 format: 'yyyy-MM-dd',
                 min_doc_count: 1,
-                // order: {
-                //     _count: 'desc',
-                // }
             },
         }
 
@@ -296,51 +293,69 @@ export class SharedFunctionsService {
         return {list, agg};
     }
 
-    private addMatchOrTerms = (must: any[], field: string, value?: string | string[]) => {
-        // if (value === 'ALL') {
-        //     must.push({ match_all: {} }); 
-        //     return;
-        // }
-        if (value != undefined) {
-            const isKeyword = field.includes(".keyword");
-    
-            if (Array.isArray(value)) {
-                if (isKeyword) {
-                    must.push({
-                        terms: {
-                            [field]: value
+
+    private addMatchOrTerms = (filter: any[], field: string, value?: string | string[] | null) => {
+        if (value === undefined || value === null) return;
+
+        const isKeyword = field.includes(".keyword");
+
+        if (Array.isArray(value)) {
+            const validValues = value.filter(v => v !== null && v !== undefined && v !== '');
+            if (validValues.length === 0) return;
+
+            if (isKeyword) {
+                // for keyword fields, use terms query
+                filter.push({
+                    terms: {
+                        [field]: validValues
+                    }
+                });
+            } else {
+                // for single value, use match query
+                if (validValues.length === 1) {
+                    filter.push({
+                        match: {
+                            [field]: validValues[0]
                         }
                     });
-                } else {
-                    must.push({
+                // for 3 or less values, use bool with should
+                } else if (validValues.length <= 3) {
+                    filter.push({
                         bool: {
-                            should: value.map(val => ({
-                                match_phrase: {
-                                    [field]: {
-                                        query: val,
-                                    }
+                            should: validValues.map(val => ({
+                                match: {
+                                    [field]: val
                                 }
                             })),
                             minimum_should_match: 1
                         }
                     });
-                }
-            } else {
-                if (isKeyword) {
-                    must.push({
-                        term: {
-                            [field]: value
-                        }
-                    });
+                // for more than 3 values, use terms query
                 } else {
-                    must.push({
-                        match_phrase: {
-                            [field]: {
-                                query: value
-                            }
+                    filter.push({
+                        terms: {
+                            [field]: validValues
                         }
                     });
                 }
+            }
+        } else {
+            // for single value, use match query
+            const stringValue = value.toString().trim();
+
+            if (isKeyword) {
+                // for keyword fields, use term query
+                filter.push({
+                    term: {
+                        [field]: stringValue
+                    }
+                });
+            } else {
+                filter.push({
+                    match: {
+                        [field]: stringValue
+                    }
+                });
             }
         }
     };
@@ -446,20 +461,12 @@ export class SharedFunctionsService {
 
         // check if event is hybrid, physical or online
         if(fields.mode !== undefined) {
-            const hybridConditions: any[] = [];
-            // event is hybrid
-            if(fields.mode.includes('hybrid')) hybridConditions.push({match: { "event_hybrid": "1" } });
-            // event is online
-            if(fields.mode.includes('online')) hybridConditions.push({ match: {"event_cityId": "1"} });
-            // event is physical and not online
-            if(fields.mode.includes('physical')) hybridConditions.push({ bool: { must_not: { match: {"event_cityId": "1"} }, must: { match: {"event_hybrid": "0"} }}});
-
-            if (hybridConditions.length === 1) {
-                // if only one condition, push it directly
-                must.push(hybridConditions[0]);
-            }else if (hybridConditions.length > 1) { 
-                // if multiple conditions, use 'should' (OR logic)
-                must.push({bool: { should: hybridConditions, }});
+            if(fields.mode === 'hybrid') {
+                filter.push({match: { "event_hybrid": "1" }});
+            } else if(fields.mode === 'online') {
+                filter.push({ match: {"event_cityId": "1"} });
+            } else if(fields.mode === 'physical') {
+                filter.push({ bool: { must_not: { match: {"event_cityId": "1"} }, must: { match: {"event_hybrid": "0"} }}});
             }
         }
 

@@ -146,10 +146,10 @@ export const FilterDataSchema = z.object({
     "visibility": z.enum(['open', 'private', 'draft']).optional(),
     "mode": z.preprocess((val) => {
         if (typeof val === 'string') {
-            return val.split(',').map((mode) => mode.trim().toLowerCase());
+            return val.split(',').map((mode) => mode.trim().toLowerCase())[0]; // Take only the first value
         }
         return val;
-    }, z.array(z.enum(['online', 'physical', 'hybrid'])).optional()),
+    }, z.enum(['online', 'physical', 'hybrid']).optional()),
     "estimatedVisitors": z.enum(['Nano', 'Micro', 'Small', 'Medium', 'Large', 'Mega', 'Ultra']).optional(),
     "isBranded": z.preprocess(
         (val) => {
