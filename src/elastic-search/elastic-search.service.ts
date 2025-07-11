@@ -23,30 +23,51 @@ export class ElasticSearchService {
         const todayDate = new Date();
         const startDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
         
-        // list query
-        searches.push({index: process.env.TESTING_INDEX})
-        searches.push({
-            size: pagination?.limit,
-            from: pagination?.offset,
-            sort: sortClause,
-            _source: requiredFields,
-            track_total_hits: false,
-            query: {bool: {filter: [{ term: { "event_published": "1" } }], must_not: [{ term: { "event_status": "U" } }]}}
-        })
+        // // list query
+        // searches.push({index: process.env.TESTING_INDEX})
+        // searches.push({
+        //     size: pagination?.limit,
+        //     from: pagination?.offset,
+        //     sort: sortClause,
+        //     _source: requiredFields,
+        //     track_total_hits: false,
+        //     query: {bool: {filter: [{ term: { "event_published": "1" } }], must_not: [{ term: { "event_status": "U" } }]}}
+        // })
 
-        // aggregation query
-        searches.push({index: process.env.TESTING_INDEX})
-        searches.push({
-            size: 0,
-            query: {bool: {filter: [{ term: { "event_published": "1" } }, { range: { "event_startDate": { gte: startDate } } }], must_not: [{ term: { "event_status": "U" } }]}},
-            aggs: defaultAggregations
-        })
+        // // aggregation query
+        // searches.push({index: process.env.TESTING_INDEX})
+        // searches.push({
+        //     size: 0,
+        //     query: {bool: {filter: [{ term: { "event_published": "1" } }, { range: { "event_startDate": { gte: startDate } } }], must_not: [{ term: { "event_status": "U" } }]}},
+        //     aggs: defaultAggregations
+        // })
         console.time('M Search');
-        const eventData = await this.elasticsearchService.msearch({
-            body: searches
-        })
+        // const eventData = await this.elasticsearchService.msearch({
+        //     body: searches
+        // })
+        const [list, agg] = await Promise.all([
+            this.elasticsearchService.search({
+                index: process.env.TESTING_INDEX,
+                body: {
+                    size: pagination?.limit,
+                    from: pagination?.offset,
+                    sort: sortClause,
+                    _source: requiredFields,
+                    query: {bool: {filter: [{ term: { "event_published": "1" } }], must_not: [{ term: { "event_status": "U" } }]}}
+                }
+            }),
+            this.elasticsearchService.search({
+                index: process.env.TESTING_INDEX,
+                body: {
+                    size: 0,
+                    query: {bool: {filter: [{ term: { "event_published": "1" } }], must_not: [{ term: { "event_status": "U" } }]}},
+                    aggs: defaultAggregations
+                }
+            })
+        ])
         console.timeEnd('M Search');
-        return eventData;
+        return {list, agg};
+        // return eventData;
     }
 
     async defaultCaseData(requiredFields: string[], pagination: PaginationDto, sortClause: any[]) {
@@ -172,7 +193,11 @@ export class ElasticSearchService {
                     console.log('M Search');
                     eventData = await this.getMSearchData(filterFields, pagination, sortClause, requiredFields);
                     statusCode = eventData.statusCode || 200;
-                    response = await this.sharedFunctionsService.buildMSearchViewResponse(eventData, pagination, req);
+                    // response = await this.sharedFunctionsService.buildMSearchViewResponse(eventData, pagination, req);
+                    response = {
+                        list: eventData.list.body.hits,
+                        agg: eventData.agg.body.aggregations
+                    }
                     break;
 
                 case 'DEFAULT_LIST':
