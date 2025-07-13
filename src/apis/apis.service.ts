@@ -29,7 +29,6 @@ export class ApisService {
             data: {
                 api_name: createApiDto.name,
                 slug: createApiDto.slug || '',
-                default_daily_limit: createApiDto.default_daily_limit || 100,
                 basic_parameters: createApiDto.basic_parameters || [],
                 advanced_parameters: createApiDto.advanced_parameters || [],
                 is_active: createApiDto.is_active || true,
@@ -98,10 +97,9 @@ export class ApisService {
     async createUserApiAccess(createUserApiAccessDto: CreateUserApiAccessDto) {
         const { user_id, api_id, daily_limit } = createUserApiAccessDto;
     
-        // Get API's default daily limit if not provided
+        // Check if API exists
         const api = await this.prisma.api.findUnique({
           where: { id: api_id },
-          select: { default_daily_limit: true },
         });
     
         if (!api) {
@@ -116,13 +114,13 @@ export class ApisService {
             },
           },
           update: {
-            daily_limit: daily_limit || api.default_daily_limit,
+            daily_limit: daily_limit || 100,
             has_access: true,
           },
           create: {
             user_id,
             api_id,
-            daily_limit: daily_limit || api.default_daily_limit,
+            ...(daily_limit && { daily_limit }),
             has_access: true,
           },
         });

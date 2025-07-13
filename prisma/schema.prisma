@@ -10,6 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // url      = env("DB_URL") //for schema changes use this
   url      = env("DB_URL")
 }
 
@@ -39,7 +40,6 @@ model Api {
   id                  String          @id @default(uuid())
   api_name            String          @unique
   slug                String          @unique
-  default_daily_limit Int             @default(100)
   basic_parameters    Json
   advanced_parameters Json
   is_active           Boolean         @default(true)
@@ -71,7 +71,7 @@ model UserApiAccess {
   id          String     @id @default(uuid())
   user_id     String     
   api_id      String     
-  daily_limit Int
+  daily_limit Int        @default(100)
   has_access  Boolean     @default(true)
   created_at  DateTime    @default(now())
   updated_at  DateTime    @updatedAt

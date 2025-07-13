@@ -9,7 +9,6 @@ const StatusSchema = z.enum(['ACTIVE', 'INACTIVE']);
 export const CreateApiSchema = z.object({
   name: z.string().min(1, 'API name is required'),
   slug: z.string().min(1).optional(),
-  default_daily_limit: z.number().int().min(1).default(100).optional(),
   basic_parameters: z.array(z.string()).default([]).optional(),
   advanced_parameters: z.array(z.string()).default([]).optional(),
   is_active: z.boolean().default(true).optional(),
@@ -18,7 +17,6 @@ export const CreateApiSchema = z.object({
 export const UpdateApiSchema = z.object({
   api_name: z.string().min(1).optional(),
   slug: z.string().min(1).optional(),
-  default_daily_limit: z.number().int().min(1).optional(),
   basic_parameters: z.array(z.string()).optional(),
   advanced_parameters: z.array(z.string()).optional(),
   is_active: z.boolean().optional(),
